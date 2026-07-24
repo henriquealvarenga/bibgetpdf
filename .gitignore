@@ -33,3 +33,11 @@ env/
 #  macOS
 # ============================================================================
 .DS_Store
+
+# ============================================================================
+#  Ferramentas locais (config pessoal — não versionar)
+# ============================================================================
+# Configurações locais do Claude Code (permissões/preferências suas).
+.claude/
+# Cache do linter ruff, se usar.
+.ruff_cache/
