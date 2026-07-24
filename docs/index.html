@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BibGetPDF — baixe os PDFs de acesso aberto da sua bibliografia</title>
+<meta name="description" content="O BibGetPDF lê seu arquivo .bib e busca o PDF de acesso aberto de cada artigo em 10 fontes legítimas, descobrindo DOIs que faltam e validando cada download.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="BibGetPDF — do .bib aos PDFs, automaticamente">
+<meta property="og:description" content="Busca o PDF de acesso aberto de cada referência da sua bibliografia em 10 fontes legítimas. Descobre DOIs, valida arquivos e gera relatório do que faltou.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fbfbfe;
+    --surface: #ffffff;
+    --surface-2: #f5f4fb;
+    --ink: #17172b;
+    --muted: #5c5c7e;
+    --border: #e9e8f3;
+    --accent: #6366f1;
+    --accent-2: #8b5cf6;
+    --accent-ink: #4f46e5;
+    --term-bg: #14142a;
+    --term-ink: #e6e6f5;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --maxw: 1120px;
+    --shadow-sm: 0 1px 2px rgba(20,20,55,.05), 0 1px 3px rgba(20,20,55,.05);
+    --shadow: 0 4px 12px -4px rgba(30,25,90,.10), 0 24px 48px -20px rgba(90,70,200,.22);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Red Hat Display', system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0a14;
+      --surface: #13131f;
+      --surface-2: #191926;
+      --ink: #edecf7;
+      --muted: #9c9cc0;
+      --border: #26263a;
+      --accent: #818cf8;
+      --accent-2: #a78bfa;
+      --accent-ink: #a5b4fc;
+      --term-bg: #0d0d1c;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+      --shadow: 0 4px 12px -4px rgba(0,0,0,.4), 0 24px 48px -20px rgba(90,70,200,.28);
+    }
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  a { color: var(--accent-ink); text-decoration: none; }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(180%) blur(14px);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.18rem; letter-spacing: -0.02em; color: var(--ink); }
+  .brand .dot { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; font-size: 16px; box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .nav-links { display: flex; align-items: center; gap: 28px; }
+  .nav-links a { color: var(--muted); font-weight: 500; font-size: .93rem; transition: color .2s; }
+  .nav-links a:hover { color: var(--ink); }
+
+  /* ---------- Buttons ---------- */
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .95rem; padding: 11px 20px; border-radius: 11px; border: 1px solid transparent; cursor: pointer; transition: transform .15s, box-shadow .2s, background .2s; white-space: nowrap; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 65%, transparent); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
+  .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--surface-2); transform: translateY(-2px); }
+  .nav .btn { padding: 8px 16px; }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; padding: clamp(56px, 9vw, 120px) 0 clamp(40px, 6vw, 80px); overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: -30% -10% auto -10%; height: 620px; z-index: 0;
+    background:
+      radial-gradient(48% 60% at 22% 20%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+      radial-gradient(42% 55% at 82% 8%, color-mix(in srgb, var(--accent-2) 26%, transparent), transparent 70%);
+    filter: blur(10px); pointer-events: none;
+  }
+  .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 600; letter-spacing: .02em; color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); padding: 6px 14px; border-radius: 100px; margin-bottom: 22px; }
+
+  .hero h1 { font-size: clamp(2.5rem, 5.6vw, 4.1rem); font-weight: 800; margin-bottom: 20px; }
+  .hero h1 em { font-style: italic; color: var(--accent-ink); }
+  .hero p.lead { font-size: clamp(1.05rem, 1.7vw, 1.28rem); color: var(--muted); max-width: 34ch; margin-bottom: 32px; }
+  .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero-meta { display: flex; gap: 22px; margin-top: 30px; flex-wrap: wrap; }
+  .hero-meta span { font-size: .88rem; color: var(--muted); display: inline-flex; align-items: center; gap: 7px; }
+
+  /* ---------- Terminal ---------- */
+  .terminal { background: var(--term-bg); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; border: 1px solid rgba(255,255,255,.06); transform: rotate(.4deg); }
+  .term-bar { display: flex; align-items: center; gap: 7px; padding: 13px 16px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.06); }
+  .term-bar i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .term-bar i:nth-child(1){ background:#ff5f57; } .term-bar i:nth-child(2){ background:#febc2e; } .term-bar i:nth-child(3){ background:#28c840; }
+  .term-bar span { margin-left: 10px; color: #8a8ab0; font-size: .78rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+  .terminal pre { color: var(--term-ink); font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.75; padding: 20px 22px; overflow-x: auto; }
+  .terminal .c { color: #7c7ca8; } .terminal .g { color: #4ade80; } .terminal .b { color: #818cf8; } .terminal .y { color: #fbbf24; } .terminal .p { color: #c084fc; }
+
+  /* ---------- Sections ---------- */
+  section { padding: clamp(56px, 8vw, 96px) 0; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto clamp(40px, 5vw, 60px); }
+  .section-head .kicker { text-transform: uppercase; letter-spacing: .12em; font-size: .76rem; font-weight: 700; color: var(--accent-ink); margin-bottom: 14px; }
+  .section-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.7rem); margin-bottom: 14px; }
+  .section-head p { color: var(--muted); font-size: 1.08rem; }
+
+  /* ---------- Features ---------- */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 30px 26px; box-shadow: var(--shadow-sm); transition: transform .2s, box-shadow .25s, border-color .25s; }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+  .card .ico { width: 48px; height: 48px; border-radius: 13px; display: grid; place-items: center; font-size: 24px; margin-bottom: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), color-mix(in srgb, var(--accent-2) 16%, var(--surface))); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+  .card h3 { font-size: 1.22rem; margin-bottom: 9px; }
+  .card p { color: var(--muted); font-size: .96rem; }
+
+  /* ---------- Steps ---------- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; counter-reset: step; }
+  .step { position: relative; padding: 32px 26px 28px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .step::before { counter-increment: step; content: "0" counter(step); font-family: var(--font-display); font-weight: 600; font-size: 2.4rem; color: color-mix(in srgb, var(--accent) 45%, transparent); line-height: 1; display: block; margin-bottom: 16px; }
+  .step h3 { font-size: 1.18rem; margin-bottom: 8px; }
+  .step p { color: var(--muted); font-size: .95rem; margin-bottom: 14px; }
+  .step code { display: block; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: .8rem; line-height: 1.7; background: var(--term-bg); color: #c7c7ee; padding: 14px 16px; border-radius: var(--radius-sm); overflow-x: auto; }
+  .step code .c { color: #7c7ca8; }
+  .step code .prompt { color: #6ee7a0; user-select: none; }
+
+  /* ---------- Sources ---------- */
+  .sources { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 780px; margin: 0 auto; }
+  .pill { font-size: .93rem; font-weight: 500; padding: 9px 18px; border-radius: 100px; background: var(--surface); border: 1px solid var(--border); color: var(--ink); transition: transform .15s, border-color .2s; }
+  .pill:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+  .pill span { color: var(--accent-ink); font-weight: 600; }
+
+  /* ---------- Ethics band ---------- */
+  .band { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), color-mix(in srgb, var(--accent-2) 12%, var(--surface))); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); border-radius: var(--radius); padding: clamp(32px, 5vw, 48px); text-align: center; max-width: 820px; margin: 0 auto; }
+  .band .ico { font-size: 40px; margin-bottom: 16px; }
+  .band h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 12px; }
+  .band p { color: var(--muted); max-width: 56ch; margin: 0 auto; }
+
+  /* ---------- Author ---------- */
+  .author { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(28px, 4vw, 40px); box-shadow: var(--shadow-sm); max-width: 860px; margin: 0 auto; }
+  .avatar { width: 92px; height: 92px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 2rem; color: #fff; box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--accent) 60%, transparent); }
+  .author h3 { font-size: 1.4rem; margin-bottom: 8px; }
+  .author p { color: var(--muted); font-size: .98rem; margin-bottom: 12px; }
+  .author .link { font-weight: 600; font-size: .92rem; display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ---------- Footer ---------- */
+  footer { border-top: 1px solid var(--border); padding: 48px 0 40px; text-align: center; }
+  footer .brand { justify-content: center; margin-bottom: 16px; }
+  footer p { color: var(--muted); font-size: .9rem; margin-bottom: 6px; }
+  footer .foot-author { font-size: 1.02rem; color: var(--ink); margin-bottom: 10px; }
+  footer .foot-author a { color: var(--ink); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+  footer .foot-author a:hover { color: var(--accent-ink); }
+  footer .made { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: .88rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 100px; }
+
+  /* ---------- Reveal animation ---------- */
+  .reveal { opacity: 1; transform: none; }
+  html.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1); }
+  html.js .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { html.js .reveal { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 880px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+    .hero p.lead { max-width: none; }
+    .terminal { transform: none; }
+    .features, .steps { grid-template-columns: 1fr; }
+    .nav-links a:not(.btn) { display: none; }
+    .author { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+  }
+  @media (min-width: 561px) and (max-width: 880px) {
+    .features, .steps { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <div class="brand"><span class="dot">📄</span> BibGetPDF</div>
+    <div class="nav-links">
+      <a href="#recursos">Recursos</a>
+      <a href="#como-usar">Como usar</a>
+      <a href="#fontes">Fontes</a>
+      <a class="btn btn-primary" href="https://github.com/henriquealvarenga/bibgetpdf">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">📚 Ferramenta acadêmica · código aberto</span>
+      <h1>Da sua bibliografia<br>aos PDFs, <em>automaticamente</em>.</h1>
+      <p class="lead">O BibGetPDF lê seu arquivo <code>.bib</code> e busca o PDF de acesso aberto de cada artigo — descobrindo DOIs que faltam, validando cada arquivo e dizendo exatamente o que não encontrou.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://github.com/henriquealvarenga/bibgetpdf">Ver no GitHub ↗</a>
+        <a class="btn btn-ghost" href="#como-usar">Como usar →</a>
+      </div>
+      <div class="hero-meta">
+        <span>🌐 10 fontes de acesso aberto</span>
+        <span>🐍 Python 3.10+</span>
+        <span>🔓 só open access</span>
+      </div>
+    </div>
+    <div class="terminal" aria-hidden="true">
+      <div class="term-bar"><i></i><i></i><i></i><span>bibgetpdf — download</span></div>
+<pre><span class="c">$</span> python bibgetpdf.py <span class="b">--bib</span> references.bib
+
+  [ 1/20] amin2024          <span class="g">✅ [Unpaywall]  0.5 MB</span>
+  [ 2/20] ariasflores2022   <span class="p">🔎</span> <span class="g">✅ [EuropePMC] 0.3 MB</span>
+  [ 3/20] bartkowiak2022    <span class="p">🔎</span> <span class="g">✅ [EuropePMC] 0.4 MB</span>
+  [ 4/20] chukwuemeka2023   <span class="g">✅ [Unpaywall]  0.9 MB</span>
+  <span class="c">        …</span>
+
+  <span class="y">📊 RESUMO</span>
+  ✅ Baixados: <span class="g">14</span>      <span class="p">🔎 DOIs descobertos: 1</span>
+  🧾 manifest.csv   ·   📊 relatorio.html
+</pre>
+    </div>
+  </div>
+</header>
+
+<section id="recursos">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Recursos</div>
+      <h2>Feito para pesquisadores e docentes</h2>
+      <p>Pensado para facilitar e agilizar a busca dos PDFs de uma bibliografia — automatizando o trabalho repetitivo e sendo transparente sobre o que não conseguiu encontrar.</p>
+    </div>
+    <div class="features">
+      <div class="card reveal">
+        <div class="ico">🔎</div>
+        <h3>Descoberta de DOI</h3>
+        <p>Entradas sem DOI são resolvidas no Crossref por título + autor, com correspondência validada por título, sobrenome e ano.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico">🌐</div>
+        <h3>10 fontes legítimas</h3>
+        <p>Unpaywall, OpenAlex, Semantic Scholar, Europe PMC, arXiv, CORE, DOAJ, SciELO e mais — consultadas em sequência até achar o PDF.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico">📊</div>
+        <h3>Relatório + planilha</h3>
+        <p>Um <code>relatorio.html</code> classifica o que faltou (anti-bot, paywall, erro) com links para baixar à mão, e um <code>manifest.csv</code> abre no Excel.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="como-usar" style="background: var(--surface-2);">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Como usar</div>
+      <h2>Três passos até a pasta de PDFs</h2>
+      <p>Os comandos abaixo rodam no <strong>Terminal</strong>, dentro da pasta do projeto. Requer Python 3.10+ e duas bibliotecas (<code>bibtexparser</code> e <code>requests</code>).</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <h3>Configure</h3>
+        <p>Copie o modelo de credenciais e informe seu e-mail e a chave gratuita da OpenAlex.</p>
+        <code><span class="prompt">$ </span>cp bibgetpdf.config.exemplo bibgetpdf.config</code>
+      </div>
+      <div class="step reveal">
+        <h3>Rode</h3>
+        <p>Aponte para o seu arquivo <code>.bib</code> e para a pasta onde salvar os PDFs.</p>
+        <code><span class="prompt">$ </span>python bibgetpdf.py --bib references.bib</code>
+      </div>
+      <div class="step reveal">
+        <h3>Receba</h3>
+        <p>PDFs nomeados <code>sobrenome-ano-titulo</code>, mais o relatório e a planilha do lote.</p>
+        <code>PDFs/
+├─ sha-2025-occupational…pdf
+├─ relatorio.html
+└─ manifest.csv</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fontes">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Cobertura</div>
+      <h2>Dez fontes de acesso aberto</h2>
+      <p>Consultadas em ordem de confiabilidade, com deduplicação de URLs entre elas.</p>
+    </div>
+    <div class="sources reveal">
+      <div class="pill"><span>1</span> Unpaywall</div>
+      <div class="pill"><span>2</span> Semantic Scholar</div>
+      <div class="pill"><span>3</span> OpenAlex</div>
+      <div class="pill"><span>4</span> Europe PMC</div>
+      <div class="pill"><span>5</span> PMC / NCBI</div>
+      <div class="pill"><span>6</span> arXiv</div>
+      <div class="pill"><span>7</span> CORE</div>
+      <div class="pill"><span>8</span> DOAJ</div>
+      <div class="pill"><span>9</span> DOI por editora</div>
+      <div class="pill"><span>10</span> SciELO</div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top: 0;">
+  <div class="wrap">
+    <div class="band reveal">
+      <div class="ico">🔓</div>
+      <h2>Somente acesso aberto</h2>
+      <p>O BibGetPDF busca apenas cópias legítimas de <em>open access</em>. Não acessa o Sci-Hub, não burla paywalls e não faz login em nada. O que estiver realmente em paywall aparece no relatório com o caminho para o acesso institucional (CAPES/CAFe).</p>
+    </div>
+  </div>
+</section>
+
+<section id="autor" style="background: var(--surface-2);">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Autor</div>
+      <h2>Quem construiu</h2>
+    </div>
+    <div class="author reveal">
+      <div class="avatar">HA</div>
+      <div>
+        <h3>Dr. Henrique Alvarenga</h3>
+        <p>Médico psiquiatra e professor do curso de Medicina da Universidade Federal de São João del-Rei (UFSJ), onde coordena as disciplinas de Psicopatologia e Psiquiatria. Atua na interface entre ciência, tecnologia, filosofia, comportamento e emoção, com interesse em análise de dados (R e Python) — terreno de onde nasceu esta ferramenta.</p>
+        <a class="link" href="https://henriquealvarenga.com">henriquealvarenga.com ↗</a>
+        &nbsp;&nbsp;<a class="link" href="https://github.com/henriquealvarenga">GitHub ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><span class="dot">📄</span> BibGetPDF</div>
+    <p class="foot-author">Feito por <a href="https://henriquealvarenga.com"><strong>Dr. Henrique Alvarenga</strong></a> · <a href="https://henriquealvarenga.com">henriquealvarenga.com</a></p>
+    <p>Licença MIT · © 2026 Henrique Alvarenga da Silva · <a href="https://github.com/henriquealvarenga/bibgetpdf">GitHub ↗</a></p>
+    <div class="made">✨ Construído com o apoio do Claude Code (Anthropic)</div>
+  </div>
+</footer>
+
+<script>
+  // Reveal on scroll (progressive enhancement) — só anima se o JS rodar
+  document.documentElement.classList.add('js');
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+
+</body>
+</html>

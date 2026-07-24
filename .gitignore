@@ -11,6 +11,13 @@ bibgetpdf.config
 DESENVOLVIMENTO.md
 
 # ============================================================================
+#  Cópias e backups locais do script (não versionar)
+# ============================================================================
+bibgetpdf_copy.py
+*_copy.py
+*.bak
+
+# ============================================================================
 #  Saída do script
 # ============================================================================
 # Pasta padrão de PDFs baixados (inclui relatorio.html e download_log.txt).

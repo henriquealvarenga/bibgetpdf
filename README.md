@@ -1,11 +1,13 @@
-# bibGetPDF
+# BibGetPDF
+
+*Da sua bibliografia `.bib` aos PDFs de acesso aberto, automaticamente.*
 
 Baixa automaticamente os **PDFs de acesso aberto** dos artigos de um arquivo
 `.bib`. Para cada referência, consulta em sequência 10 fontes legítimas de
 _open access_ (Unpaywall, Semantic Scholar, OpenAlex, Europe PMC, PMC, arXiv,
 CORE, DOAJ, SciELO e, opcionalmente, resolução de DOI por editora), valida se
 o que baixou é mesmo um PDF e salva com um nome limpo no padrão
-`Sobrenome-Ano-Titulo.pdf`.
+`sobrenome-ano-titulo.pdf`.
 
 Entradas **sem DOI** são o maior motivo de artigos não encontrados (sem DOI,
 quase toda fonte fica sem chave de busca). Por isso, antes de baixar, o script
@@ -113,7 +115,7 @@ Opções úteis:
 | `--delay`        | Pausa em segundos entre artigos (padrão: `3.0`; aumente se já foi bloqueado) |
 | `--doi-scrape`   | Reativa a fonte que raspa páginas de editora (mais cobertura, mais risco de bloqueio; desligada por padrão) |
 | `--no-doi-discovery`   | Não descobrir DOI no Crossref para entradas sem DOI (ver abaixo; ligada por padrão) |
-| `--use-doi-as-filename` | Nomear cada PDF pelo DOI (único) em vez de `Sobrenome-Ano-Titulo` — útil para títulos ambíguos |
+| `--use-doi-as-filename` | Nomear cada PDF pelo DOI (único) em vez de `sobrenome-ano-titulo` — útil para títulos ambíguos |
 | `--no-report`    | Não gerar o relatório HTML |
 | `--no-probe`     | No diagnóstico, não fazer requisições extras (classifica offline) |
 
@@ -125,7 +127,7 @@ Veja todas com `python bibgetpdf.py --help`.
 
 Dentro da pasta de saída (`PDFs/` por padrão):
 
-- Os **PDFs** baixados, nomeados `Sobrenome-Ano-Titulo.pdf` (ou pelo DOI, com
+- Os **PDFs** baixados, nomeados `sobrenome-ano-titulo.pdf` (ou pelo DOI, com
   `--use-doi-as-filename`).
 - **`relatorio.html`** — diagnóstico visual do que não baixou, com links para
   baixar manualmente (abra no navegador).
@@ -158,3 +160,26 @@ o relatório HTML já traz os links prontos.
 O arquivo `bibgetpdf.config` contém a sua chave de API — **não compartilhe e
 não versione**. O `.gitignore` do projeto já ignora esse arquivo; o que pode
 ir para um repositório é o `bibgetpdf.config.exemplo` (só com placeholders).
+
+---
+
+## Licença
+
+Distribuído sob a licença **MIT** — veja o arquivo [LICENSE](LICENSE). Você pode
+usar, modificar e redistribuir livremente, mantendo o aviso de copyright.
+
+---
+
+## Autor
+
+**Dr. Henrique Alvarenga** — médico psiquiatra e professor do curso de Medicina
+da Universidade Federal de São João del-Rei (UFSJ), onde coordena as disciplinas
+de Psicopatologia e Psiquiatria. Atua na interface entre ciência, tecnologia,
+filosofia, comportamento e emoção, com interesse em análise de dados (R e
+Python) — terreno de onde nasceu esta ferramenta.
+
+🔗 [github.com/henriquealvarenga](https://github.com/henriquealvarenga)
+
+---
+
+Construído com o apoio do **[Claude Code](https://claude.com/claude-code)** (Anthropic).
