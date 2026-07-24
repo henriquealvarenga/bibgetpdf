@@ -11,6 +11,10 @@ authors:
     family-names: Silva
     orcid: "https://orcid.org/0000-0001-9799-5240"
     affiliation: "Universidade Federal de São João del-Rei (UFSJ)"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21536834"
+    description: "DOI do Zenodo (concept DOI — todas as versões)"
 license: MIT
 repository-code: "https://github.com/henriquealvarenga/bibgetpdf"
 url: "https://henriquealvarenga.com/bibgetpdf/"

@@ -2,6 +2,10 @@
 
 *Da sua bibliografia `.bib` aos PDFs de acesso aberto, automaticamente.*
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21536834.svg)](https://doi.org/10.5281/zenodo.21536834)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+
 Baixa automaticamente os **PDFs de acesso aberto** dos artigos de um arquivo
 `.bib`. Para cada referência, consulta em sequência 10 fontes legítimas de
 _open access_ (Unpaywall, Semantic Scholar, OpenAlex, Europe PMC, PMC, arXiv,
@@ -167,6 +171,35 @@ ir para um repositório é o `bibgetpdf.config.exemplo` (só com placeholders).
 
 Distribuído sob a licença **MIT** — veja o arquivo [LICENSE](LICENSE). Você pode
 usar, modificar e redistribuir livremente, mantendo o aviso de copyright.
+
+---
+
+## Como citar
+
+Se este software foi útil na sua pesquisa, por favor cite-o:
+
+> Silva, H. A. (2026). *BibGetPDF* (v1.0.0) [Software]. Zenodo.
+> https://doi.org/10.5281/zenodo.21536834
+
+Em **BibTeX** (apropriado, já que a ferramenta lê `.bib`):
+
+```bibtex
+@software{silva_2026_21536834,
+  author       = {Silva, Henrique Alvarenga},
+  title        = {BibGetPDF},
+  month        = jul,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.21536834},
+  url          = {https://doi.org/10.5281/zenodo.21536834},
+}
+```
+
+**DOI (todas as versões):** [10.5281/zenodo.21536834](https://doi.org/10.5281/zenodo.21536834)
+
+O GitHub também exibe um botão **"Cite this repository"** (gerado a partir do
+`CITATION.cff`) com o formato pronto em APA e BibTeX.
 
 ---
 
