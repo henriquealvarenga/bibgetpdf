@@ -1,0 +1,35 @@
+# ============================================================================
+#  CREDENCIAIS — nunca versione (contém sua chave de API e e-mail)
+# ============================================================================
+bibgetpdf.config
+# O modelo com placeholders PODE ir para o repositório — é seguro:
+!bibgetpdf.config.exemplo
+
+# ============================================================================
+#  Notas internas de desenvolvimento (diário de bordo, não público)
+# ============================================================================
+DESENVOLVIMENTO.md
+
+# ============================================================================
+#  Saída do script
+# ============================================================================
+# Pasta padrão de PDFs baixados (inclui relatorio.html e download_log.txt).
+# Se você usar --output com outro nome, adicione essa pasta aqui também.
+PDFs/
+# Downloads parciais/interrompidos
+*.part
+
+# ============================================================================
+#  Python
+# ============================================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ============================================================================
+#  macOS
+# ============================================================================
+.DS_Store

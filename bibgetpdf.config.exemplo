@@ -1,0 +1,31 @@
+# ============================================================================
+# bibGetPDF — arquivo de credenciais (MODELO)
+# ============================================================================
+# Como usar:
+#   1. Copie este arquivo para 'bibgetpdf.config' (sem o .exemplo), na mesma
+#      pasta do script bibgetpdf.py
+#   2. Preencha os valores abaixo com os SEUS dados.
+#   3. Rode o script normalmente — ele lê este arquivo automaticamente.
+#
+# Formato: uma linha "chave = valor" por item. Linhas em branco e as que
+# começam com # são ignoradas.
+#
+# Precedência (para cada valor): a flag na linha de comando vence a variável
+# de ambiente, que vence este arquivo. Ou seja, este arquivo é o padrão
+# cômodo; dá para sobrescrever pontualmente sem editá-lo.
+#
+# Se versionar a pasta com git, adicione 'bibgetpdf.config' ao .gitignore
+# para NÃO publicar suas credenciais.
+# ============================================================================
+
+# E-mail de contato para as APIs acadêmicas.
+# A Unpaywall exige um e-mail válido; as demais usam para o "polite pool"
+# (tratamento mais tolerante). Pode ser um alias que encaminhe para você.
+email = voce@exemplo.com
+
+# Chave da API OpenAlex (gratuita: https://openalex.org/settings/api).
+# Obrigatória desde 13/02/2026 — sem ela, a fonte OpenAlex fica limitada a
+# ~100 requisições/dia. Deixe em branco se ainda não tiver (as outras 9
+# fontes seguem funcionando).
+# Aceita também os apelidos 'chave_openalex', 'api_key' e 'openalex'.
+openalex_key = sua-chave-openalex
