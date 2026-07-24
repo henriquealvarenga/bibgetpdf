@@ -1,0 +1,15 @@
+{
+  "title": "BibGetPDF",
+  "description": "Baixa automaticamente os PDFs de acesso aberto das referências de um arquivo .bib, consultando 10 fontes legítimas de open access, descobrindo DOIs ausentes (via Crossref) e validando cada download.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Silva, Henrique Alvarenga",
+      "orcid": "0000-0001-9799-5240",
+      "affiliation": "Universidade Federal de São João del-Rei (UFSJ)"
+    }
+  ],
+  "keywords": ["open access", "bibtex", "PDF", "bibliografia", "Crossref", "Unpaywall", "academic software"],
+  "access_right": "open"
+}

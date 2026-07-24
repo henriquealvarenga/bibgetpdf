@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "Se você usar este software, por favor cite-o conforme os metadados abaixo."
+title: BibGetPDF
+abstract: >-
+  Baixa automaticamente os PDFs de acesso aberto das referências de um arquivo
+  .bib, consultando 10 fontes legítimas de open access, descobrindo DOIs
+  ausentes (via Crossref) e validando cada download.
+type: software
+authors:
+  - given-names: "Henrique Alvarenga"
+    family-names: Silva
+    orcid: "https://orcid.org/0000-0001-9799-5240"
+    affiliation: "Universidade Federal de São João del-Rei (UFSJ)"
+license: MIT
+repository-code: "https://github.com/henriquealvarenga/bibgetpdf"
+url: "https://henriquealvarenga.com/bibgetpdf/"
+keywords:
+  - open access
+  - bibtex
+  - PDF
+  - bibliografia
+  - Crossref
+  - Unpaywall
+version: "1.0.0"
+date-released: "2026-07-24"
