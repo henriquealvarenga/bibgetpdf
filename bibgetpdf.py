@@ -1,5 +1,5 @@
 """
-BibGetPDF v1.0 — baixador de PDFs de acesso aberto (arquivo: bibgetpdf.py)
+BibGetPDF v1.1 — baixador de PDFs de acesso aberto (arquivo: bibgetpdf.py)
 ===========================================================
 Script para download automatizado de artigos acadêmicos em formato PDF
 a partir de um arquivo de referências bibliográficas (.bib).
@@ -136,6 +136,11 @@ except ImportError:
     _BS4_AVAILABLE = False
 
 
+# Versão do pacote — fonte única, usada no User-Agent, no relatório, no log e
+# na flag --version; lida pelo pyproject.toml via attr = "bibgetpdf.__version__".
+__version__ = "1.1.0"
+
+
 # ============================================================================
 # SESSÕES HTTP
 # ============================================================================
@@ -146,7 +151,7 @@ except ImportError:
 # Sem e-mail pessoal embutido: o mailto começa com um placeholder e é
 # reescrito em runtime (main) com o e-mail que o usuário configurar. Assim o
 # fonte não carrega dado pessoal de ninguém e pode ser compartilhado.
-UA_ACADEMIC = "BibGetPDF/1.0 (academic PDF downloader; mailto:seu.email@exemplo.com)"
+UA_ACADEMIC = f"BibGetPDF/{__version__} (academic PDF downloader; mailto:seu.email@exemplo.com)"
 UA_BROWSER = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -2519,7 +2524,7 @@ def generate_html_report(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BibGetPDF v1.0 — Relatório de Download</title>
+  <title>BibGetPDF v{__version__} — Relatório de Download</title>
   <style>
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -2577,7 +2582,7 @@ def generate_html_report(
 </head>
 <body>
   <header>
-    <h1>BibGetPDF v1.0 — Relatório de Download</h1>
+    <h1>BibGetPDF v{__version__} — Relatório de Download</h1>
     <div class="subtitle">{esc(bib_path)} &nbsp;·&nbsp; {now}</div>
     <div class="stats">
       <div class="stat"><div class="stat-n">{total_entries}</div>
@@ -2603,7 +2608,7 @@ def generate_html_report(
     {blocked_section}
     {error_section}
   </main>
-  <footer>Gerado por BibGetPDF v1.0 &nbsp;·&nbsp; {now}</footer>
+  <footer>Gerado por BibGetPDF v{__version__} &nbsp;·&nbsp; {now}</footer>
 </body>
 </html>"""
 
@@ -2615,9 +2620,26 @@ def generate_html_report(
 # ============================================================================
 
 
+def _config_search_paths() -> list[Path]:
+    """
+    Locais onde procurar o CONFIG_FILE, em ordem de prioridade:
+      1. diretório atual (CWD) — caso típico de 'pip install bibgetpdf';
+      2. ~/.config/bibgetpdf/ (respeita XDG_CONFIG_HOME) — config do usuário;
+      3. ao lado do módulo/script — retrocompat do uso local no repositório.
+    """
+    xdg = os.environ.get("XDG_CONFIG_HOME", "").strip()
+    base = Path(xdg) if xdg else Path.home() / ".config"
+    return [
+        Path.cwd() / CONFIG_FILE,
+        base / "bibgetpdf" / CONFIG_FILE,
+        Path(__file__).resolve().parent / CONFIG_FILE,
+    ]
+
+
 def _load_local_config() -> dict[str, str]:
     """
-    Lê o arquivo de credenciais local (CONFIG_FILE, ao lado do script)
+    Lê o arquivo de credenciais local (CONFIG_FILE), procurado em CWD,
+    ~/.config/bibgetpdf/ e ao lado do script (ver _config_search_paths),
     no formato `chave = valor` por linha. Linhas em branco e começando com
     são ignoradas; tudo antes do primeiro `=` é a chave (minúscula), o resto
     é o valor. Retorna {} se o arquivo não existir ou não puder ser lido.
@@ -2627,8 +2649,8 @@ def _load_local_config() -> dict[str, str]:
     fonte. Chaves reconhecidas hoje: 'email', 'openalex_key'.
     """
     cfg: dict[str, str] = {}
-    path = Path(__file__).resolve().parent / CONFIG_FILE
-    if not path.exists():
+    path = next((p for p in _config_search_paths() if p.exists()), None)
+    if path is None:
         return cfg
     try:
         for line in path.read_text(encoding="utf-8").splitlines():
@@ -2685,7 +2707,10 @@ def parse_args() -> argparse.Namespace:
     --use-doi-as-filename : nomeia o arquivo pelo DOI em vez de Autor-Ano
     """
     parser = argparse.ArgumentParser(
-        description="BibGetPDF v1.0 - Download de PDFs acadêmicos de acesso aberto.",
+        description=f"BibGetPDF v{__version__} - Download de PDFs acadêmicos de acesso aberto.",
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"BibGetPDF {__version__}",
     )
     parser.add_argument(
         "--bib", default=DEFAULT_BIB_INPUT,
@@ -2780,7 +2805,7 @@ def parse_args() -> argparse.Namespace:
 def print_header(start_time: datetime) -> None:
     """Imprime cabeçalho com versão, hora e lista de fontes."""
     print("=" * 70)
-    print("  BibGetPDF v1.0")
+    print(f"  BibGetPDF v{__version__}")
     print(f"  {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
     print()
@@ -2849,7 +2874,7 @@ def save_log(
       4. Lista para download manual (CAPES/CAFe)
     """
     with open(log_file, "w", encoding="utf-8") as f:
-        f.write("BibGetPDF v1.0 — Log de download\n")
+        f.write(f"BibGetPDF v{__version__} — Log de download\n")
         f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"{'=' * 70}\n\n")
 
@@ -2980,7 +3005,7 @@ def main() -> None:
     # APIs com ele (a constante UA_ACADEMIC nasce só com um placeholder). É o
     # que identifica quem roda nos 'polite pools' e no contato das APIs.
     API_SESSION.headers["User-Agent"] = (
-        f"BibGetPDF/1.0 (academic PDF downloader; mailto:{config.email})"
+        f"BibGetPDF/{__version__} (academic PDF downloader; mailto:{config.email})"
     )
 
     print(f"📂 Carregando: {bib_input}")

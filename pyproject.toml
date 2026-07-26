@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bibgetpdf"
+dynamic = ["version"]
+description = "Baixa automaticamente os PDFs de acesso aberto das referências de um arquivo .bib."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Henrique Alvarenga da Silva" }]
+keywords = ["open-access", "bibtex", "pdf", "bibliografia", "crossref", "unpaywall", "academic"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "bibtexparser",
+    "requests",
+]
+
+[project.optional-dependencies]
+full = ["unidecode", "beautifulsoup4"]
+
+[project.scripts]
+bibgetpdf = "bibgetpdf:main"
+
+[project.urls]
+Homepage = "https://henriquealvarenga.com/bibgetpdf/"
+Repository = "https://github.com/henriquealvarenga/bibgetpdf"
+DOI = "https://doi.org/10.5281/zenodo.21536834"
+
+[tool.setuptools]
+py-modules = ["bibgetpdf"]
+
+[tool.setuptools.dynamic]
+version = { attr = "bibgetpdf.__version__" }

@@ -32,6 +32,8 @@ PDFs/
 __pycache__/
 *.py[cod]
 *.egg-info/
+build/
+dist/
 .venv/
 venv/
 env/
@@ -48,3 +50,9 @@ env/
 .claude/
 # Cache do linter ruff, se usar.
 .ruff_cache/
+
+# ============================================================================
+#  Documentos de registro (INPI/UFSJ) e notas internas — não públicos
+# ============================================================================
+_registro/
+_dev/
