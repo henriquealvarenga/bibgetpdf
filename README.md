@@ -2,6 +2,7 @@
 
 *Da sua bibliografia `.bib` aos PDFs de acesso aberto, automaticamente.*
 
+[![PyPI](https://img.shields.io/pypi/v/bibgetpdf.svg)](https://pypi.org/project/bibgetpdf/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21536834.svg)](https://doi.org/10.5281/zenodo.21536834)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
