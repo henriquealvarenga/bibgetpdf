@@ -32,13 +32,25 @@ bloqueou durante a execução) com links para download manual, e um
 ## Requisitos
 
 - **Python 3.10 ou superior**
-- Dependências obrigatórias: `bibtexparser`, `requests`
-- Opcionais (recomendadas): `unidecode` (nomes de arquivo com acentos) e
-  `beautifulsoup4` (melhora a extração de PDF de páginas HTML)
+
+## Instalação
+
+Instale com o **pip** (as dependências obrigatórias vêm junto):
 
 ```bash
-pip install bibtexparser requests unidecode beautifulsoup4
+pip install bibgetpdf
 ```
+
+Para incluir os opcionais recomendados — `unidecode` (nomes de arquivo com
+acentos) e `beautifulsoup4` (melhora a extração de PDF de páginas HTML):
+
+```bash
+pip install "bibgetpdf[full]"
+```
+
+Isso cria o comando **`bibgetpdf`**. *(A partir do código-fonte: clone o
+repositório e rode `pip install .`, ou use `python bibgetpdf.py` direto —
+nesse caso, instale as dependências com `pip install bibtexparser requests`.)*
 
 ---
 
@@ -50,7 +62,9 @@ API OpenAlex**. A forma mais cômoda é criar um arquivo de credenciais.
 
 ### 1. Crie o arquivo `bibgetpdf.config`
 
-Na mesma pasta do script, copie o modelo que já vem no projeto:
+Crie um arquivo `bibgetpdf.config` **na pasta onde você vai rodar o comando**
+(o BibGetPDF também aceita em `~/.config/bibgetpdf/`). A partir do código-fonte,
+dá para copiar o modelo que vem no projeto:
 
 ```bash
 cp bibgetpdf.config.exemplo bibgetpdf.config
@@ -106,8 +120,11 @@ funciona igual a `openalex_key`), mas o recomendado é usar os nomes acima.
 Com o `bibgetpdf.config` pronto, o básico é:
 
 ```bash
-python bibgetpdf.py --bib references.bib --output PDFs
+bibgetpdf --bib references.bib --output PDFs
 ```
+
+*(A partir do código-fonte, o equivalente é
+`python bibgetpdf.py --bib references.bib --output PDFs`.)*
 
 Opções úteis:
 
@@ -123,7 +140,7 @@ Opções úteis:
 | `--no-report`    | Não gerar o relatório HTML |
 | `--no-probe`     | No diagnóstico, não fazer requisições extras (classifica offline) |
 
-Veja todas com `python bibgetpdf.py --help`.
+Veja todas com `bibgetpdf --help`.
 
 ---
 
