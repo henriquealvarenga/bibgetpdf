@@ -3,7 +3,7 @@
 *Da sua bibliografia `.bib` aos PDFs de acesso aberto, automaticamente.*
 
 [![PyPI](https://img.shields.io/pypi/v/bibgetpdf.svg)](https://pypi.org/project/bibgetpdf/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21796720.svg)](https://doi.org/10.5281/zenodo.21796720)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21536833.svg)](https://doi.org/10.5281/zenodo.21536833)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 
@@ -240,10 +240,14 @@ Em **BibTeX** (apropriado, já que a ferramenta lê `.bib`):
 }
 ```
 
-**DOI desta versão (v1.3.0):** [10.5281/zenodo.21796720](https://doi.org/10.5281/zenodo.21796720)
+**DOI (todas as versões):** [10.5281/zenodo.21536833](https://doi.org/10.5281/zenodo.21536833)
+— sempre resolve para a versão mais recente; é o recomendado para citar o
+software em geral.
 
-Cada versão tem o seu próprio DOI no Zenodo — o da v1.0.0 é
-`10.5281/zenodo.21536834` e o da v1.1.0, `10.5281/zenodo.21610649`.
+**DOI desta versão (v1.3.0):** [10.5281/zenodo.21796720](https://doi.org/10.5281/zenodo.21796720)
+— use quando precisar apontar exatamente a versão empregada na sua pesquisa
+(as anteriores: v1.0.0 = `10.5281/zenodo.21536834`, v1.1.0 =
+`10.5281/zenodo.21610649`).
 
 O GitHub também exibe um botão **"Cite this repository"** (gerado a partir do
 `CITATION.cff`) com o formato pronto em APA e BibTeX.
