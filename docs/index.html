@@ -468,26 +468,35 @@
       </div>
 
       <div class="wstep reveal">
-        <h3>Crie o arquivo de configuração <span class="once">só uma vez</span></h3>
-        <p>O BibGetPDF precisa saber <strong>o seu e-mail</strong>. Não é burocracia: as bases acadêmicas pedem um endereço de contato para saber quem está consultando (a Unpaywall recusa quem não informa) e, em troca, atendem você com mais folga. O e-mail vai num arquivinho de configuração, que o próprio programa cria:</p>
+        <h3>Informe o seu e-mail <span class="once">só uma vez</span></h3>
+        <p>O BibGetPDF precisa saber <strong>o seu e-mail</strong>. Não é burocracia: as bases acadêmicas pedem um endereço de contato para saber quem está consultando (a Unpaywall recusa quem não informa) e, em troca, atendem você com mais folga.</p>
+        <p>Você não precisa editar arquivo nenhum — o programa pergunta e guarda sozinho. Rode:</p>
         <div class="cmd"><pre>bibgetpdf --init</pre><button class="copy" type="button">Copiar</button></div>
-        <p>Isso cria um arquivo chamado <code>bibgetpdf.config</code> na pasta onde você está. Abra-o num editor de texto qualquer (Bloco de Notas, TextEdit) e troque o e-mail de exemplo pelo seu:</p>
+        <p>Ele faz duas perguntas ali mesmo, no Terminal. Digite o seu e-mail, tecle Enter, e na segunda pergunta tecle Enter de novo para pular:</p>
         <div class="filebox">
-          <div class="fname">bibgetpdf.config</div>
-<pre><span class="c"># OBRIGATÓRIO — seu e-mail de contato.</span>
-email = <span class="hl">voce@universidade.br</span>
+          <div class="fname">Terminal</div>
+<pre>⚙️  Configuração do BibGetPDF
 
-<span class="c"># OPCIONAL — chave da API OpenAlex (gratuita).</span>
-<span class="c"># openalex_key = sua-chave-openalex</span></pre>
+   Seu e-mail: <span class="hl">voce@universidade.br</span>
+
+   Chave da API OpenAlex — opcional, tecle Enter para pular.
+   Chave [Enter pula]:
+
+<span class="c">✅ Pronto, salvo em: /Users/voce/Bibliografia/bibgetpdf.config
+   Não vou perguntar de novo — o arquivo é lido a cada execução.</span></pre>
         </div>
-        <p>Salve o arquivo e acabou. <strong>É a única coisa obrigatória</strong> — a chave da OpenAlex pode ficar como está.</p>
+        <p>Pronto, acabou. E é <strong>só desta vez</strong>: o BibGetPDF lê essa configuração sozinho a cada execução, então das próximas vezes você vai direto ao passo 5.</p>
         <div class="callout tip">
           <span class="ci">🔑</span>
-          <p><strong>Sobre a chave da OpenAlex (opcional):</strong> sem ela, a OpenAlex — que é <em>uma</em> das dez fontes — limita você a cerca de 100 buscas por dia; as outras nove seguem funcionando sem restrição. Se um dia quiser, a chave é gratuita e sai em um minuto em <a href="https://openalex.org/settings/api" target="_blank" rel="noopener">openalex.org/settings/api</a>: basta apagar o <code>#</code> do começo da linha <code>openalex_key</code> e colar a chave.</p>
+          <p><strong>Sobre a chave da OpenAlex (opcional):</strong> sem ela, a OpenAlex — que é <em>uma</em> das dez fontes — limita você a cerca de 100 buscas por dia; as outras nove seguem funcionando sem restrição. Se um dia quiser, ela é gratuita e sai em um minuto em <a href="https://openalex.org/settings/api" target="_blank" rel="noopener">openalex.org/settings/api</a>. Para adicioná-la depois, rode <code>bibgetpdf --init</code> de novo e responda <code>s</code> quando ele perguntar se quer alterar.</p>
+        </div>
+        <div class="callout tip">
+          <span class="ci">⌨️</span>
+          <p><strong>Prefere não guardar nada?</strong> Dá para informar o e-mail no próprio comando, toda vez, sem criar arquivo: <code>bibgetpdf --bib references.bib --email voce@universidade.br</code></p>
         </div>
         <div class="callout warn">
           <span class="ci">🔒</span>
-          <p>Esse arquivo guarda dados seus. <strong>Não publique e não versione no Git.</strong></p>
+          <p>O arquivo <code>bibgetpdf.config</code>, criado por esse comando, guarda dados seus. <strong>Não publique e não versione no Git.</strong></p>
         </div>
       </div>
 
@@ -568,7 +577,7 @@ email = <span class="hl">voce@universidade.br</span>
           <tr><th>Opção</th><th>Para que serve</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>--init</code></td><td>Cria o arquivo <code>bibgetpdf.config</code> na pasta atual. É o primeiro comando de quem acabou de instalar.</td></tr>
+          <tr><td><code>--init</code></td><td>Pergunta o seu e-mail (e a chave opcional da OpenAlex) e grava em <code>bibgetpdf.config</code>, na pasta atual. É o primeiro comando de quem acabou de instalar — e serve também para alterar o que já está salvo.</td></tr>
           <tr><td><code>--bib</code></td><td>O arquivo <code>.bib</code> de entrada. Se você não disser nada, procura por <code>references.bib</code>.</td></tr>
           <tr><td><code>--output</code></td><td>A pasta onde salvar os PDFs (padrão: <code>PDFs</code>). Ela é criada se não existir.</td></tr>
           <tr><td><code>--email</code></td><td>Informa o e-mail direto no comando, sem usar o arquivo de configuração.</td></tr>
@@ -615,9 +624,10 @@ email = <span class="hl">voce@universidade.br</span>
         <div class="dbody">
           <div class="errmsg">⚠️  Falta configurar o seu e-mail de contato — as APIs
     acadêmicas exigem um (a Unpaywall recusa quem não informa).</div>
-          <p>Ou o arquivo de configuração ainda não existe, ou existe mas continua com o e-mail de exemplo. O próprio recado na tela diz qual dos dois é o seu caso e mostra o caminho do arquivo, quando ele existe.</p>
-          <p>Se ainda não existe, crie com <code>bibgetpdf --init</code> e edite a linha <code>email =</code>. Se você só quer resolver de uma vez, sem arquivo nenhum, dá para informar no próprio comando:</p>
+          <p>Rodando no Terminal, normalmente você <em>não</em> vê essa mensagem: o BibGetPDF simplesmente pergunta o seu e-mail, salva e continua. Ela aparece quando não há ninguém para responder — em tarefa agendada, script ou quando a saída do comando foi redirecionada para um arquivo.</p>
+          <p>Nesses casos, informe o e-mail sem depender de pergunta, de uma destas formas:</p>
           <div class="cmd"><pre>bibgetpdf --bib references.bib --email voce@universidade.br</pre><button class="copy" type="button">Copiar</button></div>
+          <p>…ou deixe-o gravado antes, rodando <code>bibgetpdf --init</code> uma vez num Terminal normal. Se a mensagem apontar um arquivo de configuração que já existe, é porque ele ainda está com o e-mail de exemplo — rode <code>bibgetpdf --init</code> e responda <code>s</code> para corrigir.</p>
         </div>
       </details>
 
