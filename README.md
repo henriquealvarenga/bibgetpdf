@@ -63,44 +63,56 @@ nesse caso, instale as dependências com `pip install bibtexparser requests`.)*
 
 O script **não** contém nenhum dado pessoal. Antes do primeiro uso, você
 precisa informar um **e-mail de contato** — e, se quiser, a **chave da API
-OpenAlex**. A forma mais cômoda é criar um arquivo de credenciais.
+OpenAlex**.
 
-### 1. Crie o arquivo `bibgetpdf.config`
-
-Na pasta onde você vai rodar o comando, peça ao próprio BibGetPDF que crie
-o arquivo:
+Você **não precisa editar arquivo nenhum**: o BibGetPDF pergunta e guarda
+sozinho. Na pasta onde você vai trabalhar, rode:
 
 ```bash
 bibgetpdf --init
 ```
 
-*(A partir do código-fonte, o equivalente é copiar o modelo do projeto:
-`cp bibgetpdf.config.exemplo bibgetpdf.config`.)*
+Ele faz duas perguntas no Terminal:
 
-O BibGetPDF procura esse arquivo na pasta atual, em `~/.config/bibgetpdf/`
-e ao lado do script — nessa ordem.
-
-### 2. Preencha o e-mail
-
-Abra o `bibgetpdf.config` num editor de texto e troque o e-mail de exemplo
-pelo seu:
-
-```ini
-email = voce@exemplo.com
-# openalex_key = sua-chave-openalex
 ```
+   Seu e-mail: voce@exemplo.com
+
+   Chave da API OpenAlex — opcional, tecle Enter para pular.
+   Chave [Enter pula]:
+
+✅ Pronto, salvo em: /Users/voce/Bibliografia/bibgetpdf.config
+   Não vou perguntar de novo — o arquivo é lido a cada execução.
+```
+
+E acabou — **é só desta vez**. As respostas ficam num `bibgetpdf.config`,
+lido automaticamente a cada execução seguinte.
+
+> Se você rodar direto (`bibgetpdf --bib refs.bib`) sem ter configurado nada,
+> ele pergunta o e-mail na hora, salva e **continua o download no mesmo
+> comando** — o `--init` só existe para quem prefere deixar tudo pronto antes.
+
+Os dois valores:
 
 - **`email`** (obrigatório) — qualquer e-mail válido seu. As APIs acadêmicas
   usam para identificar quem está fazendo as requisições (a **Unpaywall
   exige** um); em troca, tratam você com mais tolerância (o chamado _polite
   pool_). Pode ser um alias que encaminhe para o seu e-mail real.
 - **`openalex_key`** (opcional) — a chave da API OpenAlex. É **gratuita** e
-  leva um minuto: pegue a sua em **<https://openalex.org/settings/api>** e
-  apague o `#` do início da linha. Desde **13/02/2026**, sem a chave a fonte
-  OpenAlex fica limitada a ~100 requisições/dia (as outras 9 fontes
-  continuam funcionando normalmente).
+  leva um minuto: pegue a sua em **<https://openalex.org/settings/api>**.
+  Desde **13/02/2026**, sem a chave a fonte OpenAlex fica limitada a ~100
+  requisições/dia (as outras 9 fontes continuam funcionando normalmente).
+  Para adicioná-la depois, rode `bibgetpdf --init` de novo e responda `s`.
 
-Pronto. O script lê esse arquivo automaticamente.
+O arquivo é procurado na pasta atual, em `~/.config/bibgetpdf/` e ao lado do
+script — nessa ordem. Se preferir editá-lo à mão, o formato é `chave = valor`:
+
+```ini
+email = voce@exemplo.com
+# openalex_key = sua-chave-openalex
+```
+
+*(A partir do código-fonte há também o modelo `bibgetpdf.config.exemplo`,
+que pode ser copiado com `cp bibgetpdf.config.exemplo bibgetpdf.config`.)*
 
 **Sobre o formato das linhas:**
 
@@ -128,19 +140,14 @@ funciona igual a `openalex_key`), mas o recomendado é usar os nomes acima.
 
 ## Uso
 
-Na primeira vez, dentro da pasta onde ficarão os seus arquivos:
-
-```bash
-bibgetpdf --init                              # cria o bibgetpdf.config
-# abra o arquivo criado e ponha o seu e-mail
-bibgetpdf --bib references.bib --output PDFs  # roda
-```
-
-Com o `bibgetpdf.config` pronto, das próximas vezes basta a última linha:
+Dentro da pasta onde ficam o seu `.bib` e os PDFs:
 
 ```bash
 bibgetpdf --bib references.bib --output PDFs
 ```
+
+Na primeira vez, ele pergunta o seu e-mail antes de começar (e guarda a
+resposta). Das próximas, roda direto.
 
 *(A partir do código-fonte, o equivalente é
 `python bibgetpdf.py --bib references.bib --output PDFs`.)*
@@ -149,7 +156,7 @@ Opções úteis:
 
 | Flag             | O que faz |
 |------------------|-----------|
-| `--init`         | Cria um `bibgetpdf.config` na pasta atual e sai (primeiro uso) |
+| `--init`         | Pergunta e-mail/chave e grava o `bibgetpdf.config` (primeiro uso ou alteração) |
 | `--bib`          | Arquivo `.bib` de entrada (padrão: `references.bib`) |
 | `--output`       | Pasta onde salvar os PDFs (padrão: `PDFs`) |
 | `--threshold`    | Rigor da comparação de títulos, 0–1 (padrão: `0.75`; maior = mais estrito) |
@@ -215,7 +222,7 @@ usar, modificar e redistribuir livremente, mantendo o aviso de copyright.
 
 Se este software foi útil na sua pesquisa, por favor cite-o:
 
-> Silva, H. A. (2026). *BibGetPDF* (v1.2.0) [Software]. Zenodo.
+> Silva, H. A. (2026). *BibGetPDF* (v1.3.0) [Software]. Zenodo.
 > https://doi.org/10.5281/zenodo.21536834
 
 Em **BibTeX** (apropriado, já que a ferramenta lê `.bib`):
@@ -227,7 +234,7 @@ Em **BibTeX** (apropriado, já que a ferramenta lê `.bib`):
   month        = aug,
   year         = 2026,
   publisher    = {Zenodo},
-  version      = {v1.2.0},
+  version      = {v1.3.0},
   doi          = {10.5281/zenodo.21536834},
   url          = {https://doi.org/10.5281/zenodo.21536834},
 }

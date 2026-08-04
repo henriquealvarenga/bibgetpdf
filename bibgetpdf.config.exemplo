@@ -2,12 +2,16 @@
 # BibGetPDF — arquivo de credenciais (MODELO)
 # ============================================================================
 # Como usar:
+#   O jeito mais simples é NÃO usar este arquivo: rode 'bibgetpdf --init',
+#   responda o e-mail que ele perguntar, e o arquivo é criado e preenchido
+#   sozinho. Este modelo existe para quem prefere editar à mão.
+#
+#   Para editar à mão:
 #   1. Copie este arquivo para 'bibgetpdf.config' (sem o .exemplo), na pasta
 #      onde você vai rodar o comando.
-#      (Se você instalou pelo pip, não precisa copiar nada: rode
-#       'bibgetpdf --init' e o arquivo é criado para você.)
 #   2. Troque o e-mail abaixo pelo SEU.
-#   3. Rode o BibGetPDF normalmente — ele lê este arquivo automaticamente.
+#   3. Rode o BibGetPDF normalmente — ele lê este arquivo automaticamente,
+#      a cada execução, sem que você precise mexer nele de novo.
 #
 # O BibGetPDF procura este arquivo em três lugares, nesta ordem: a pasta
 # atual, ~/.config/bibgetpdf/ e ao lado do bibgetpdf.py.

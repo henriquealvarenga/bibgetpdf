@@ -1,5 +1,5 @@
 """
-BibGetPDF v1.2 — baixador de PDFs de acesso aberto (arquivo: bibgetpdf.py)
+BibGetPDF v1.3 — baixador de PDFs de acesso aberto (arquivo: bibgetpdf.py)
 ===========================================================
 Script para download automatizado de artigos acadêmicos em formato PDF
 a partir de um arquivo de referências bibliográficas (.bib).
@@ -47,7 +47,7 @@ Fluxo recomendado: rode o "Find Available PDFs" do Zotero primeiro, exporte
 como .bib apenas o que sobrou, e só então rode este script no .bib reduzido.
 
 Uso:
-    bibgetpdf --init                                   # 1ª vez: cria o config
+    bibgetpdf --init                                   # 1ª vez: pergunta e grava
     python bibgetpdf.py --bib refs.bib --output PDFs --email voce@email.com
     python bibgetpdf.py --bib refs.bib --delay 5        # mais conservador
     python bibgetpdf.py --bib refs.bib --doi-scrape     # reativa DOI-PDF
@@ -64,9 +64,13 @@ Configuração pessoal (e-mail de contato + chave OpenAlex):
     e-mail:  --email voce@exemplo.com  |  BIBGETPDF_EMAIL  |  arquivo (email=)
     chave:   --openalex-key sua-chave  |  OPENALEX_API_KEY |  arquivo (openalex_key=)
 
-  Jeito mais cômodo — rodar `bibgetpdf --init`, que cria um arquivo
-  'bibgetpdf.config' já comentado na pasta atual (a partir do código-fonte,
-  dá para copiar o bibgetpdf.config.exemplo). Conteúdo:
+  Jeito mais cômodo — rodar `bibgetpdf --init`: num terminal ele PERGUNTA o
+  e-mail (e a chave, opcional) e grava o 'bibgetpdf.config' na pasta atual,
+  sem que seja preciso abrir editor. Fora de um terminal (cron, pipe, CI),
+  onde ninguém pode responder, escreve só o modelo comentado. Rodar sem
+  configuração nenhuma também pergunta, e segue o download em seguida.
+  A partir do código-fonte, dá para copiar o bibgetpdf.config.exemplo.
+  Conteúdo do arquivo:
 
     email = voce@exemplo.com
     openalex_key = sua-chave-openalex
@@ -98,7 +102,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from collections import defaultdict        # movido do meio do arquivo
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime  # Retry-After em HTTP-date
@@ -140,7 +144,7 @@ except ImportError:
 
 # Versão do pacote — fonte única, usada no User-Agent, no relatório, no log e
 # na flag --version; lida pelo pyproject.toml via attr = "bibgetpdf.__version__".
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 # ============================================================================
@@ -494,11 +498,15 @@ MAX_PDF_SIZE = 100 * 1024 * 1024  # usado em download_file (acesso global)
 # nenhum arquivo de exemplo para copiar. Sem isto, a primeira execução vira
 # um beco sem saída — o script exige um e-mail e não há de onde tirar o
 # modelo.
+# Os marcadores {{EMAIL}} e {{OPENALEX_LINE}} são preenchidos por
+# _render_config(); num terminal, as respostas vêm das perguntas feitas ao
+# usuário, de modo que ele nunca precise abrir o arquivo num editor.
 CONFIG_TEMPLATE = """\
 # ============================================================================
 #  bibgetpdf.config — suas credenciais (arquivo criado por: bibgetpdf --init)
 # ============================================================================
-#  Preencha o e-mail abaixo e salve. É só isso para o BibGetPDF rodar.
+#  Este arquivo é lido automaticamente a cada execução: uma vez preenchido,
+#  você não precisa mexer nele de novo.
 #
 #  NÃO compartilhe nem versione este arquivo (ele guarda sua chave de API).
 # ============================================================================
@@ -506,16 +514,20 @@ CONFIG_TEMPLATE = """\
 # OBRIGATÓRIO — seu e-mail de contato.
 # As APIs acadêmicas usam para saber quem está fazendo as requisições; a
 # Unpaywall recusa quem não informa. Em troca, tratam você com mais
-# tolerância (o "polite pool"). Troque o valor abaixo pelo seu e-mail:
-email = seu.email@exemplo.com
+# tolerância (o "polite pool").
+email = {{EMAIL}}
 
 # OPCIONAL — chave da API OpenAlex (gratuita, leva um minuto):
 #   https://openalex.org/settings/api
 # Sem ela, a fonte OpenAlex fica limitada a ~100 buscas/dia; as outras 9
-# fontes seguem funcionando normalmente. Para usar, apague o "#" do início
-# da linha abaixo e ponha a sua chave no lugar:
-# openalex_key = sua-chave-openalex
+# fontes seguem funcionando normalmente. Para adicioná-la depois, rode
+# 'bibgetpdf --init' de novo — ou apague o "#" da linha abaixo e cole a sua.
+{{OPENALEX_LINE}}
 """
+# Linha usada quando o usuário não informa a chave: fica comentada, para não
+# mandar um valor de mentira às APIs (o placeholder preenchido era enviado
+# como se fosse uma chave real).
+OPENALEX_LINE_VAZIA = "# openalex_key = sua-chave-openalex"
 
 
 # ============================================================================
@@ -2724,40 +2736,245 @@ def _resolve_setting(cli_value: str | None, env_var: str,
     return cfg.get(cfg_key, "").strip()
 
 
+def _modo_interativo() -> bool:
+    """
+    Diz se dá para conversar com quem está rodando — ou seja, se há um
+    terminal de verdade dos dois lados.
+
+    Toda pergunta feita ao usuário passa por aqui. Sem esta guarda, o script
+    travaria esperando digitação quando rodado por cron, por um pipe ou numa
+    esteira de CI, onde ninguém pode responder.
+    """
+    try:
+        return sys.stdin.isatty() and sys.stdout.isatty()
+    except (AttributeError, ValueError):
+        # stdin/stdout fechados ou substituídos por objetos sem isatty()
+        return False
+
+
+def _email_parece_valido(valor: str) -> bool:
+    """
+    Validação deliberadamente frouxa: só descarta o que claramente não é
+    e-mail (sem @, sem domínio, com espaço) e o placeholder do modelo.
+    Não cabe ao script julgar endereços exóticos, mas cabe evitar que um
+    "asdf" vire User-Agent nas APIs acadêmicas.
+    """
+    valor = valor.strip()
+    if not valor or valor == DEFAULT_EMAIL:
+        return False
+    return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", valor) is not None
+
+
+def _perguntar(texto: str) -> str | None:
+    """
+    Faz uma pergunta no terminal e devolve a resposta sem espaços nas bordas.
+
+    Devolve None se o usuário encerrar a entrada (Ctrl+D) ou interromper
+    (Ctrl+C) — que devem sair limpos, sem traceback na cara de quem só
+    queria desistir.
+    """
+    try:
+        return input(texto).strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return None
+
+
+def _perguntar_email() -> str:
+    """
+    Pergunta o e-mail de contato, com até 3 tentativas. Devolve "" se o
+    usuário desistir — o chamador decide o que fazer nesse caso.
+    """
+    for tentativa in range(3):
+        resposta = _perguntar("   Seu e-mail: ")
+        if resposta is None:
+            return ""
+        if _email_parece_valido(resposta):
+            return resposta
+        if not resposta:
+            print("   (o e-mail é obrigatório — a Unpaywall recusa quem não informa)")
+        else:
+            print(f"   '{resposta}' não parece um e-mail. Exemplo: maria@ufsj.edu.br")
+        if tentativa == 2:
+            print("   Deixando para depois.")
+    return ""
+
+
+def _perguntar_openalex_key() -> str:
+    """
+    Pergunta a chave da OpenAlex, que é opcional. Enter pula. Devolve "".
+    """
+    print("\n   Chave da API OpenAlex — opcional, tecle Enter para pular.")
+    print("   (é gratuita, em openalex.org/settings/api; sem ela, só a fonte")
+    print("    OpenAlex fica limitada a ~100 buscas/dia)")
+    resposta = _perguntar("   Chave [Enter pula]: ")
+    return resposta or ""
+
+
+def _render_config(email: str = DEFAULT_EMAIL, openalex_key: str = "") -> str:
+    """Preenche o CONFIG_TEMPLATE com o e-mail e a chave informados."""
+    linha_key = (f"openalex_key = {openalex_key}" if openalex_key
+                 else OPENALEX_LINE_VAZIA)
+    return (CONFIG_TEMPLATE
+            .replace("{{EMAIL}}", email)
+            .replace("{{OPENALEX_LINE}}", linha_key))
+
+
+def _atualizar_linha(linhas: list[str], campo: str, valor: str) -> list[str]:
+    """
+    Substitui, na lista de linhas de um config já existente, o valor do
+    `campo` (nome canônico: 'email' ou 'openalex_key'), preservando todo o
+    resto — comentários, ordem e demais chaves.
+
+    Reaproveita _CONFIG_KEY_ALIASES para reconhecer a linha mesmo quando o
+    usuário escreveu um apelido ('chave_openalex', 'e-mail'...). Se o campo
+    não existir no arquivo, é acrescentado ao final; se existir comentado,
+    a linha comentada é reaproveitada (descomentada) em vez de duplicar.
+    """
+    def canonico(linha: str) -> str | None:
+        corpo = linha.lstrip()
+        comentada = corpo.startswith("#")
+        if comentada:
+            corpo = corpo.lstrip("#").strip()
+        if "=" not in corpo:
+            return None
+        chave = corpo.partition("=")[0].strip().lower()
+        return _CONFIG_KEY_ALIASES.get(chave, chave)
+
+    novas: list[str] = []
+    trocou = False
+    for linha in linhas:
+        if not trocou and canonico(linha) == campo:
+            novas.append(f"{campo} = {valor}")
+            trocou = True
+        else:
+            novas.append(linha)
+    if not trocou:
+        novas.append(f"{campo} = {valor}")
+    return novas
+
+
+def _salvar_credenciais(email: str, openalex_key: str = "") -> Path | None:
+    """
+    Grava e-mail (e chave, se houver) no arquivo de credenciais e devolve o
+    caminho gravado — ou None se não deu para escrever.
+
+    Se já existe um config, edita-o no lugar preservando comentários e
+    outras chaves; senão, cria um novo na pasta atual a partir do modelo.
+    """
+    existente = next((p for p in _config_search_paths() if p.exists()), None)
+    try:
+        if existente:
+            linhas = existente.read_text(encoding="utf-8").splitlines()
+            linhas = _atualizar_linha(linhas, "email", email)
+            if openalex_key:
+                linhas = _atualizar_linha(linhas, "openalex_key", openalex_key)
+            existente.write_text("\n".join(linhas) + "\n", encoding="utf-8")
+            return existente
+        destino = Path.cwd() / CONFIG_FILE
+        destino.write_text(_render_config(email, openalex_key), encoding="utf-8")
+        return destino
+    except OSError:
+        return None
+
+
+def _configurar_conversando(destino_novo: bool = True) -> tuple[str, str] | None:
+    """
+    Conduz a configuração por perguntas e grava o resultado.
+
+    Devolve (email, openalex_key) em caso de sucesso, ou None se o usuário
+    desistiu ou o arquivo não pôde ser escrito (o chamador então mostra as
+    instruções manuais). O argumento existe só para variar o texto de
+    abertura entre 'primeira configuração' e 'atualização'.
+    """
+    if destino_novo:
+        print("   As bases acadêmicas pedem um e-mail de contato para saber")
+        print("   quem está consultando — a Unpaywall recusa quem não informa.")
+        print("   Ele fica salvo aqui no seu computador e não é perguntado de novo.\n")
+
+    email = _perguntar_email()
+    if not email:
+        return None
+
+    chave = _perguntar_openalex_key()
+
+    caminho = _salvar_credenciais(email, chave)
+    if caminho is None:
+        print("\n❌ Não consegui gravar o arquivo de configuração nesta pasta")
+        print("   (sem permissão de escrita). Tente rodar numa pasta sua,")
+        print("   como a de documentos — ou use a opção --email no comando.")
+        return None
+
+    print(f"\n✅ Pronto, salvo em: {caminho}")
+    if chave:
+        print("   E-mail e chave da OpenAlex guardados.")
+    print("   Não vou perguntar de novo — o arquivo é lido a cada execução.")
+    return email, chave
+
+
 def cmd_init() -> int:
     """
-    Cria o arquivo de credenciais CONFIG_FILE na pasta atual, a partir do
-    CONFIG_TEMPLATE, e imprime o que fazer em seguida.
+    Configura as credenciais do BibGetPDF.
 
-    Nunca sobrescreve um arquivo existente (ele guarda a chave de API do
-    usuário): se já houver um, mostra o caminho e sai sem tocar nele.
+    Num terminal, pergunta o e-mail (e a chave opcional da OpenAlex) e grava
+    tudo sozinho — o usuário nunca precisa abrir o arquivo num editor. Fora
+    de um terminal (pipe, cron, CI), onde ninguém pode responder, apenas
+    escreve o modelo comentado e explica o que editar.
+
+    Nunca sobrescreve credenciais existentes sem confirmação explícita.
     Retorna o código de saída do processo.
     """
-    destino = Path.cwd() / CONFIG_FILE
+    existente = next((p for p in _config_search_paths() if p.exists()), None)
 
-    if destino.exists():
-        print(f"ℹ️  Você já tem um arquivo de configuração aqui:\n"
-              f"   {destino}\n\n"
-              f"   Nada foi alterado. Para editá-lo, abra-o num editor de\n"
-              f"   texto e confira a linha que começa com 'email ='.")
+    # --- sem terminal: comportamento não interativo, como antes ---
+    if not _modo_interativo():
+        if existente:
+            print(f"ℹ️  Você já tem um arquivo de configuração aqui:\n"
+                  f"   {existente}\n\n"
+                  f"   Nada foi alterado. Para editá-lo, abra-o num editor de\n"
+                  f"   texto e confira a linha que começa com 'email ='.")
+            return 0
+        destino = Path.cwd() / CONFIG_FILE
+        try:
+            destino.write_text(_render_config(), encoding="utf-8")
+        except OSError as e:
+            print(f"❌ Não consegui criar o arquivo em:\n   {destino}\n"
+                  f"   Motivo: {e}\n\n"
+                  "   Tente rodar o comando numa pasta onde você tenha permissão\n"
+                  "   de escrita (a sua pasta de documentos, por exemplo).")
+            return 1
+        print(f"✅ Arquivo de configuração criado:\n   {destino}\n")
+        print("   Agora faça 2 coisas:\n")
+        print("   1. Abra esse arquivo num editor de texto e troque")
+        print(f"      '{DEFAULT_EMAIL}' pelo seu e-mail de verdade.\n")
+        print("   2. Ponha nesta mesma pasta o seu arquivo .bib")
+        print("      (exportado do Zotero/Mendeley) e rode:\n")
+        print(f"        bibgetpdf --bib {DEFAULT_BIB_INPUT} --output {DEFAULT_PDF_DIR}\n")
         return 0
 
-    try:
-        destino.write_text(CONFIG_TEMPLATE, encoding="utf-8")
-    except OSError as e:
-        print(f"❌ Não consegui criar o arquivo em:\n   {destino}\n"
-              f"   Motivo: {e}\n\n"
-              "   Tente rodar o comando numa pasta onde você tenha permissão\n"
-              "   de escrita (a sua pasta de documentos, por exemplo).")
+    # --- com terminal: conversa ---
+    print("\n⚙️  Configuração do BibGetPDF\n")
+
+    if existente:
+        atual = _load_local_config().get("email", "").strip()
+        print(f"   Você já tem uma configuração em:\n   {existente}")
+        if atual and atual != DEFAULT_EMAIL:
+            print(f"   E-mail atual: {atual}")
+        else:
+            print("   E-mail atual: ainda não configurado")
+        resposta = _perguntar("\n   Quer alterar? [s/N]: ")
+        if resposta is None or not resposta.lower().startswith("s"):
+            print("   Nada foi alterado.")
+            return 0
+        print()
+        return 0 if _configurar_conversando(destino_novo=False) else 1
+
+    if _configurar_conversando() is None:
         return 1
 
-    print(f"✅ Arquivo de configuração criado:\n   {destino}\n")
-    print("   Agora faça 2 coisas:\n")
-    print("   1. Abra esse arquivo num editor de texto e troque")
-    print(f"      '{DEFAULT_EMAIL}' pelo seu e-mail de verdade.\n")
-    print("   2. Ponha nesta mesma pasta o seu arquivo .bib")
-    print("      (exportado do Zotero/Mendeley) e rode:\n")
-    print(f"        bibgetpdf --bib {DEFAULT_BIB_INPUT} --output {DEFAULT_PDF_DIR}\n")
+    print("\n   Agora ponha o seu arquivo .bib nesta pasta")
+    print("   (exportado do Zotero/Mendeley) e rode:\n")
+    print(f"      bibgetpdf --bib {DEFAULT_BIB_INPUT} --output {DEFAULT_PDF_DIR}\n")
     return 0
 
 
@@ -3061,24 +3278,46 @@ def main() -> None:
     # algo precisa ver a instrução, não 25 linhas de lista de fontes
     # empurrando o erro para fora da tela.
     if config.email == DEFAULT_EMAIL:
-        print("⚠️  Falta configurar o seu e-mail de contato — as APIs "
-              "acadêmicas exigem um (a Unpaywall recusa quem não informa).\n")
-        # Se o arquivo já existe, o usuário só esqueceu de editá-lo; dizer
-        # onde ele está poupa a caça ao arquivo.
-        existente = next((p for p in _config_search_paths() if p.exists()), None)
-        if existente:
-            print("   Você já tem o arquivo de configuração aqui:")
-            print(f"      {existente}\n")
-            print("   Abra-o num editor de texto e troque a linha")
-            print(f"      email = {DEFAULT_EMAIL}")
-            print("   pelo seu e-mail de verdade. Depois rode o comando de novo.")
+        # Num terminal, resolver na hora vale mais do que mandar o usuário
+        # embora: ele responde, gravamos, e a execução segue no mesmo
+        # comando — sem passo separado e sem abrir arquivo em editor.
+        if _modo_interativo():
+            print("⚙️  Primeira vez por aqui — falta só o seu e-mail.\n")
+            resultado = _configurar_conversando()
+            if resultado is not None:
+                email, chave = resultado
+                # Config é frozen: replace() devolve uma cópia com os
+                # valores novos. A chave só entra se o usuário informou uma
+                # agora (senão preserva a que já viera do ambiente/arquivo).
+                config = replace(
+                    config, email=email,
+                    openalex_api_key=chave or config.openalex_api_key,
+                )
+                print()
+            else:
+                print("\n   Sem o e-mail não dá para consultar as bases.")
+                print("   Quando quiser configurar, rode:  bibgetpdf --init")
+                print("   (ou passe direto:  bibgetpdf --email voce@exemplo.com )")
+                return
         else:
-            print("   Para criar o arquivo de configuração, rode:\n")
-            print("      bibgetpdf --init\n")
-            print("   Depois abra o arquivo criado e ponha o seu e-mail.")
-            print("   (Se preferir resolver numa linha só, sem arquivo:")
-            print("      bibgetpdf --email voce@exemplo.com )")
-        return
+            print("⚠️  Falta configurar o seu e-mail de contato — as APIs "
+                  "acadêmicas exigem um (a Unpaywall recusa quem não informa).\n")
+            # Se o arquivo já existe, o usuário só esqueceu de editá-lo;
+            # dizer onde ele está poupa a caça ao arquivo.
+            existente = next((p for p in _config_search_paths() if p.exists()), None)
+            if existente:
+                print("   Você já tem o arquivo de configuração aqui:")
+                print(f"      {existente}\n")
+                print("   Abra-o num editor de texto e troque a linha")
+                print(f"      email = {DEFAULT_EMAIL}")
+                print("   pelo seu e-mail de verdade. Depois rode o comando de novo.")
+            else:
+                print("   Para criar o arquivo de configuração, rode:\n")
+                print("      bibgetpdf --init\n")
+                print("   Ele pergunta o seu e-mail e grava sozinho.")
+                print("   (Se preferir resolver numa linha só, sem arquivo:")
+                print("      bibgetpdf --email voce@exemplo.com )")
+            return
 
     if not Path(bib_input).exists():
         print(f"❌ Não encontrei o arquivo .bib: {bib_input}")
