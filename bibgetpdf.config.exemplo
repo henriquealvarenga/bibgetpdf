@@ -1,11 +1,16 @@
 # ============================================================================
-# bibGetPDF — arquivo de credenciais (MODELO)
+# BibGetPDF — arquivo de credenciais (MODELO)
 # ============================================================================
 # Como usar:
-#   1. Copie este arquivo para 'bibgetpdf.config' (sem o .exemplo), na mesma
-#      pasta do script bibgetpdf.py
-#   2. Preencha os valores abaixo com os SEUS dados.
-#   3. Rode o script normalmente — ele lê este arquivo automaticamente.
+#   1. Copie este arquivo para 'bibgetpdf.config' (sem o .exemplo), na pasta
+#      onde você vai rodar o comando.
+#      (Se você instalou pelo pip, não precisa copiar nada: rode
+#       'bibgetpdf --init' e o arquivo é criado para você.)
+#   2. Troque o e-mail abaixo pelo SEU.
+#   3. Rode o BibGetPDF normalmente — ele lê este arquivo automaticamente.
+#
+# O BibGetPDF procura este arquivo em três lugares, nesta ordem: a pasta
+# atual, ~/.config/bibgetpdf/ e ao lado do bibgetpdf.py.
 #
 # Formato: uma linha "chave = valor" por item. Linhas em branco e as que
 # começam com # são ignoradas.
@@ -18,14 +23,14 @@
 # para NÃO publicar suas credenciais.
 # ============================================================================
 
-# E-mail de contato para as APIs acadêmicas.
+# OBRIGATÓRIO — e-mail de contato para as APIs acadêmicas.
 # A Unpaywall exige um e-mail válido; as demais usam para o "polite pool"
 # (tratamento mais tolerante). Pode ser um alias que encaminhe para você.
-email = voce@exemplo.com
+email = seu.email@exemplo.com
 
-# Chave da API OpenAlex (gratuita: https://openalex.org/settings/api).
-# Obrigatória desde 13/02/2026 — sem ela, a fonte OpenAlex fica limitada a
-# ~100 requisições/dia. Deixe em branco se ainda não tiver (as outras 9
-# fontes seguem funcionando).
+# OPCIONAL — chave da API OpenAlex (gratuita: https://openalex.org/settings/api).
+# Sem ela, a fonte OpenAlex fica limitada a ~100 requisições/dia; as outras 9
+# fontes seguem funcionando normalmente. Para usar, apague o "#" do início da
+# linha abaixo e ponha a sua chave no lugar.
 # Aceita também os apelidos 'chave_openalex', 'api_key' e 'openalex'.
-openalex_key = sua-chave-openalex
+# openalex_key = sua-chave-openalex
