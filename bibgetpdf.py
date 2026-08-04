@@ -1,5 +1,5 @@
 """
-BibGetPDF v1.1 — baixador de PDFs de acesso aberto (arquivo: bibgetpdf.py)
+BibGetPDF v1.2 — baixador de PDFs de acesso aberto (arquivo: bibgetpdf.py)
 ===========================================================
 Script para download automatizado de artigos acadêmicos em formato PDF
 a partir de um arquivo de referências bibliográficas (.bib).
@@ -47,6 +47,7 @@ Fluxo recomendado: rode o "Find Available PDFs" do Zotero primeiro, exporte
 como .bib apenas o que sobrou, e só então rode este script no .bib reduzido.
 
 Uso:
+    bibgetpdf --init                                   # 1ª vez: cria o config
     python bibgetpdf.py --bib refs.bib --output PDFs --email voce@email.com
     python bibgetpdf.py --bib refs.bib --delay 5        # mais conservador
     python bibgetpdf.py --bib refs.bib --doi-scrape     # reativa DOI-PDF
@@ -63,8 +64,9 @@ Configuração pessoal (e-mail de contato + chave OpenAlex):
     e-mail:  --email voce@exemplo.com  |  BIBGETPDF_EMAIL  |  arquivo (email=)
     chave:   --openalex-key sua-chave  |  OPENALEX_API_KEY |  arquivo (openalex_key=)
 
-  Jeito mais cômodo — criar um arquivo 'bibgetpdf.config' na pasta do script
-  (copie de bibgetpdf.config.exemplo):
+  Jeito mais cômodo — rodar `bibgetpdf --init`, que cria um arquivo
+  'bibgetpdf.config' já comentado na pasta atual (a partir do código-fonte,
+  dá para copiar o bibgetpdf.config.exemplo). Conteúdo:
 
     email = voce@exemplo.com
     openalex_key = sua-chave-openalex
@@ -138,7 +140,7 @@ except ImportError:
 
 # Versão do pacote — fonte única, usada no User-Agent, no relatório, no log e
 # na flag --version; lida pelo pyproject.toml via attr = "bibgetpdf.__version__".
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 # ============================================================================
@@ -485,6 +487,35 @@ _CONFIG_KEY_ALIASES = {
     "api_key": "openalex_key", "apikey": "openalex_key",
 }
 MAX_PDF_SIZE = 100 * 1024 * 1024  # usado em download_file (acesso global)
+
+# Modelo escrito por `--init`. Existe embutido no código (e não só no
+# arquivo bibgetpdf.config.exemplo do repositório) porque a instalação por
+# pip entrega SÓ este módulo: quem faz `pip install bibgetpdf` não tem
+# nenhum arquivo de exemplo para copiar. Sem isto, a primeira execução vira
+# um beco sem saída — o script exige um e-mail e não há de onde tirar o
+# modelo.
+CONFIG_TEMPLATE = """\
+# ============================================================================
+#  bibgetpdf.config — suas credenciais (arquivo criado por: bibgetpdf --init)
+# ============================================================================
+#  Preencha o e-mail abaixo e salve. É só isso para o BibGetPDF rodar.
+#
+#  NÃO compartilhe nem versione este arquivo (ele guarda sua chave de API).
+# ============================================================================
+
+# OBRIGATÓRIO — seu e-mail de contato.
+# As APIs acadêmicas usam para saber quem está fazendo as requisições; a
+# Unpaywall recusa quem não informa. Em troca, tratam você com mais
+# tolerância (o "polite pool"). Troque o valor abaixo pelo seu e-mail:
+email = seu.email@exemplo.com
+
+# OPCIONAL — chave da API OpenAlex (gratuita, leva um minuto):
+#   https://openalex.org/settings/api
+# Sem ela, a fonte OpenAlex fica limitada a ~100 buscas/dia; as outras 9
+# fontes seguem funcionando normalmente. Para usar, apague o "#" do início
+# da linha abaixo e ponha a sua chave no lugar:
+# openalex_key = sua-chave-openalex
+"""
 
 
 # ============================================================================
@@ -2693,6 +2724,43 @@ def _resolve_setting(cli_value: str | None, env_var: str,
     return cfg.get(cfg_key, "").strip()
 
 
+def cmd_init() -> int:
+    """
+    Cria o arquivo de credenciais CONFIG_FILE na pasta atual, a partir do
+    CONFIG_TEMPLATE, e imprime o que fazer em seguida.
+
+    Nunca sobrescreve um arquivo existente (ele guarda a chave de API do
+    usuário): se já houver um, mostra o caminho e sai sem tocar nele.
+    Retorna o código de saída do processo.
+    """
+    destino = Path.cwd() / CONFIG_FILE
+
+    if destino.exists():
+        print(f"ℹ️  Você já tem um arquivo de configuração aqui:\n"
+              f"   {destino}\n\n"
+              f"   Nada foi alterado. Para editá-lo, abra-o num editor de\n"
+              f"   texto e confira a linha que começa com 'email ='.")
+        return 0
+
+    try:
+        destino.write_text(CONFIG_TEMPLATE, encoding="utf-8")
+    except OSError as e:
+        print(f"❌ Não consegui criar o arquivo em:\n   {destino}\n"
+              f"   Motivo: {e}\n\n"
+              "   Tente rodar o comando numa pasta onde você tenha permissão\n"
+              "   de escrita (a sua pasta de documentos, por exemplo).")
+        return 1
+
+    print(f"✅ Arquivo de configuração criado:\n   {destino}\n")
+    print("   Agora faça 2 coisas:\n")
+    print("   1. Abra esse arquivo num editor de texto e troque")
+    print(f"      '{DEFAULT_EMAIL}' pelo seu e-mail de verdade.\n")
+    print("   2. Ponha nesta mesma pasta o seu arquivo .bib")
+    print("      (exportado do Zotero/Mendeley) e rode:\n")
+    print(f"        bibgetpdf --bib {DEFAULT_BIB_INPUT} --output {DEFAULT_PDF_DIR}\n")
+    return 0
+
+
 def parse_args() -> argparse.Namespace:
     """
     Parseia argumentos de linha de comando.
@@ -2711,6 +2779,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--version", action="version", version=f"BibGetPDF {__version__}",
+    )
+    # Primeiro comando de quem acabou de instalar: gera o arquivo de
+    # credenciais na pasta atual. Necessário porque o pip instala só o
+    # módulo — não há bibgetpdf.config.exemplo para copiar.
+    parser.add_argument(
+        "--init", action="store_true",
+        help=f"Cria um arquivo '{CONFIG_FILE}' de exemplo na pasta atual e "
+             "sai. Use na primeira vez: depois é só abrir o arquivo e pôr "
+             "o seu e-mail.",
     )
     parser.add_argument(
         "--bib", default=DEFAULT_BIB_INPUT,
@@ -2960,6 +3037,12 @@ def main() -> None:
       9. Gerar relatório HTML com links e classificação de falhas
     """
     args = parse_args()
+
+    # --init roda antes de tudo: é o comando de quem ainda não tem
+    # credencial nenhuma, então não faz sentido exigir .bib ou e-mail.
+    if args.init:
+        sys.exit(cmd_init())
+
     bib_input = args.bib
     pdf_output = args.output
     config = Config(
@@ -2974,6 +3057,47 @@ def main() -> None:
     )
     generate_report = not args.no_report
 
+    # As validações vêm ANTES do cabeçalho: quem esqueceu de configurar
+    # algo precisa ver a instrução, não 25 linhas de lista de fontes
+    # empurrando o erro para fora da tela.
+    if config.email == DEFAULT_EMAIL:
+        print("⚠️  Falta configurar o seu e-mail de contato — as APIs "
+              "acadêmicas exigem um (a Unpaywall recusa quem não informa).\n")
+        # Se o arquivo já existe, o usuário só esqueceu de editá-lo; dizer
+        # onde ele está poupa a caça ao arquivo.
+        existente = next((p for p in _config_search_paths() if p.exists()), None)
+        if existente:
+            print("   Você já tem o arquivo de configuração aqui:")
+            print(f"      {existente}\n")
+            print("   Abra-o num editor de texto e troque a linha")
+            print(f"      email = {DEFAULT_EMAIL}")
+            print("   pelo seu e-mail de verdade. Depois rode o comando de novo.")
+        else:
+            print("   Para criar o arquivo de configuração, rode:\n")
+            print("      bibgetpdf --init\n")
+            print("   Depois abra o arquivo criado e ponha o seu e-mail.")
+            print("   (Se preferir resolver numa linha só, sem arquivo:")
+            print("      bibgetpdf --email voce@exemplo.com )")
+        return
+
+    if not Path(bib_input).exists():
+        print(f"❌ Não encontrei o arquivo .bib: {bib_input}")
+        print(f"   Procurei em: {Path(bib_input).resolve()}\n")
+        # Um .bib com outro nome na pasta é o engano mais provável (o
+        # Zotero exporta como 'Exportado.bib', 'My Library.bib' etc.).
+        vizinhos = sorted(Path.cwd().glob("*.bib"))
+        if vizinhos:
+            print("   Mas achei estes .bib na pasta atual:")
+            for v in vizinhos[:5]:
+                print(f"      • {v.name}")
+            print("\n   Use o nome certo, por exemplo:")
+            print(f"      bibgetpdf --bib \"{vizinhos[0].name}\"")
+        else:
+            print("   Não há nenhum arquivo .bib nesta pasta.")
+            print("   Exporte sua bibliografia do Zotero/Mendeley como BibTeX")
+            print("   (.bib), salve-a nesta pasta e rode de novo.")
+        return
+
     start_time = datetime.now()
     print_header(start_time)
 
@@ -2987,19 +3111,6 @@ def main() -> None:
               "(mudança de 13/02/2026).\n"
               "    Defina OPENALEX_API_KEY ou use --openalex-key. "
               "Key gratuita: openalex.org/settings/api\n")
-
-    if not Path(bib_input).exists():
-        print(f"❌ Arquivo não encontrado: {bib_input}")
-        return
-
-    if config.email == DEFAULT_EMAIL:
-        print("⚠️  Nenhum e-mail de contato configurado — as APIs acadêmicas "
-              "precisam de um (a Unpaywall exige).\n"
-              "    Defina de UMA destas formas:\n"
-              "      • --email voce@exemplo.com\n"
-              "      • variável de ambiente BIBGETPDF_EMAIL\n"
-              f"      • arquivo '{CONFIG_FILE}' com a linha:  email = voce@exemplo.com")
-        return
 
     # E-mail confirmado como real: reescreve o User-Agent da sessão de
     # APIs com ele (a constante UA_ACADEMIC nasce só com um placeholder). É o

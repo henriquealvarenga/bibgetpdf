@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BibGetPDF — baixe os PDFs de acesso aberto da sua bibliografia</title>
-<meta name="description" content="O BibGetPDF lê seu arquivo .bib e busca o PDF de acesso aberto de cada artigo em 10 fontes legítimas, descobrindo DOIs que faltam e validando cada download.">
+<meta name="description" content="O BibGetPDF lê seu arquivo .bib e busca o PDF de acesso aberto de cada artigo em 10 fontes legítimas, descobrindo DOIs que faltam e validando cada download. Guia de uso passo a passo.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="BibGetPDF — do .bib aos PDFs, automaticamente">
 <meta property="og:description" content="Busca o PDF de acesso aberto de cada referência da sua bibliografia em 10 fontes legítimas. Descobre DOIs, valida arquivos e gera relatório do que faltou.">
@@ -27,6 +27,10 @@
     --accent-ink: #4f46e5;
     --term-bg: #14142a;
     --term-ink: #e6e6f5;
+    --ok: #15803d;
+    --ok-bg: #dcfce7;
+    --warn: #b45309;
+    --warn-bg: #fef3c7;
     --radius: 18px;
     --radius-sm: 12px;
     --maxw: 1120px;
@@ -34,6 +38,7 @@
     --shadow: 0 4px 12px -4px rgba(30,25,90,.10), 0 24px 48px -20px rgba(90,70,200,.22);
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-display: 'Red Hat Display', system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -48,12 +53,18 @@
       --accent-2: #a78bfa;
       --accent-ink: #a5b4fc;
       --term-bg: #0d0d1c;
+      --ok: #86efac;
+      --ok-bg: #14321f;
+      --warn: #fcd34d;
+      --warn-bg: #382a10;
       --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
       --shadow: 0 4px 12px -4px rgba(0,0,0,.4), 0 24px 48px -20px rgba(90,70,200,.28);
     }
   }
 
-  html { scroll-behavior: smooth; }
+  /* scroll-padding: a nav é fixa (64px) e, sem isto, clicar num link do
+     menu esconde o título da seção atrás dela. */
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
   body {
     font-family: var(--font-sans);
     background: var(--bg);
@@ -64,10 +75,20 @@
   }
 
   .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .narrow { max-width: 820px; }
 
   a { color: var(--accent-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
-  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.12; letter-spacing: -0.02em; }
+
+  /* Sem nowrap: um comando longo dentro de um parágrafo (ex.: a linha
+     completa do 'Da próxima vez') alargava a página inteira no celular. */
+  p code, li code, td code {
+    font-family: var(--font-mono); font-size: .88em;
+    background: var(--surface-2); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 6px; overflow-wrap: break-word;
+  }
 
   /* ---------- Nav ---------- */
   nav {
@@ -79,20 +100,21 @@
   .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
   .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.18rem; letter-spacing: -0.02em; color: var(--ink); }
   .brand .dot { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; font-size: 16px; box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--accent) 55%, transparent); }
-  .nav-links { display: flex; align-items: center; gap: 28px; }
+  .nav-links { display: flex; align-items: center; gap: 24px; }
   .nav-links a { color: var(--muted); font-weight: 500; font-size: .93rem; transition: color .2s; }
-  .nav-links a:hover { color: var(--ink); }
+  .nav-links a:hover { color: var(--ink); text-decoration: none; }
 
   /* ---------- Buttons ---------- */
   .btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .95rem; padding: 11px 20px; border-radius: 11px; border: 1px solid transparent; cursor: pointer; transition: transform .15s, box-shadow .2s, background .2s; white-space: nowrap; }
+  .btn:hover { text-decoration: none; }
   .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 65%, transparent); }
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
   .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--border); }
   .btn-ghost:hover { background: var(--surface-2); transform: translateY(-2px); }
-  .nav .btn { padding: 8px 16px; }
+  nav .btn { padding: 8px 16px; }
 
   /* ---------- Hero ---------- */
-  .hero { position: relative; padding: clamp(56px, 9vw, 120px) 0 clamp(40px, 6vw, 80px); overflow: hidden; }
+  .hero { position: relative; padding: clamp(56px, 9vw, 110px) 0 clamp(40px, 6vw, 72px); overflow: hidden; }
   .hero::before {
     content: ""; position: absolute; inset: -30% -10% auto -10%; height: 620px; z-index: 0;
     background:
@@ -106,7 +128,7 @@
 
   .hero h1 { font-size: clamp(2.5rem, 5.6vw, 4.1rem); font-weight: 800; margin-bottom: 20px; }
   .hero h1 em { font-style: italic; color: var(--accent-ink); }
-  .hero p.lead { font-size: clamp(1.05rem, 1.7vw, 1.28rem); color: var(--muted); max-width: 34ch; margin-bottom: 32px; }
+  .hero p.lead { font-size: clamp(1.05rem, 1.7vw, 1.28rem); color: var(--muted); max-width: 36ch; margin-bottom: 32px; }
   .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
   .hero-meta { display: flex; gap: 22px; margin-top: 30px; flex-wrap: wrap; }
   .hero-meta span { font-size: .88rem; color: var(--muted); display: inline-flex; align-items: center; gap: 7px; }
@@ -116,15 +138,16 @@
   .term-bar { display: flex; align-items: center; gap: 7px; padding: 13px 16px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.06); }
   .term-bar i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
   .term-bar i:nth-child(1){ background:#ff5f57; } .term-bar i:nth-child(2){ background:#febc2e; } .term-bar i:nth-child(3){ background:#28c840; }
-  .term-bar span { margin-left: 10px; color: #8a8ab0; font-size: .78rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
-  .terminal pre { color: var(--term-ink); font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.75; padding: 20px 22px; overflow-x: auto; }
+  .term-bar span { margin-left: 10px; color: #8a8ab0; font-size: .78rem; font-family: var(--font-mono); }
+  .terminal pre { color: var(--term-ink); font-family: var(--font-mono); font-size: .82rem; line-height: 1.75; padding: 20px 22px; overflow-x: auto; }
   .terminal .c { color: #7c7ca8; } .terminal .g { color: #4ade80; } .terminal .b { color: #818cf8; } .terminal .y { color: #fbbf24; } .terminal .p { color: #c084fc; }
 
   /* ---------- Sections ---------- */
-  section { padding: clamp(56px, 8vw, 96px) 0; }
-  .section-head { text-align: center; max-width: 640px; margin: 0 auto clamp(40px, 5vw, 60px); }
+  section { padding: clamp(56px, 8vw, 92px) 0; }
+  .section-head { text-align: center; max-width: 680px; margin: 0 auto clamp(36px, 5vw, 56px); }
+  .section-head.left { text-align: left; margin-left: 0; }
   .section-head .kicker { text-transform: uppercase; letter-spacing: .12em; font-size: .76rem; font-weight: 700; color: var(--accent-ink); margin-bottom: 14px; }
-  .section-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.7rem); margin-bottom: 14px; }
+  .section-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-bottom: 14px; }
   .section-head p { color: var(--muted); font-size: 1.08rem; }
 
   /* ---------- Features ---------- */
@@ -135,15 +158,117 @@
   .card h3 { font-size: 1.22rem; margin-bottom: 9px; }
   .card p { color: var(--muted); font-size: .96rem; }
 
-  /* ---------- Steps ---------- */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; counter-reset: step; }
-  .step { position: relative; padding: 32px 26px 28px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-  .step::before { counter-increment: step; content: "0" counter(step); font-family: var(--font-display); font-weight: 600; font-size: 2.4rem; color: color-mix(in srgb, var(--accent) 45%, transparent); line-height: 1; display: block; margin-bottom: 16px; }
-  .step h3 { font-size: 1.18rem; margin-bottom: 8px; }
-  .step p { color: var(--muted); font-size: .95rem; margin-bottom: 14px; }
-  .step code { display: block; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: .8rem; line-height: 1.7; background: var(--term-bg); color: #c7c7ee; padding: 14px 16px; border-radius: var(--radius-sm); overflow-x: auto; }
-  .step code .c { color: #7c7ca8; }
-  .step code .prompt { color: #6ee7a0; user-select: none; }
+  /* ---------- Bloco de comando (com botão copiar) ---------- */
+  .cmd { position: relative; margin: 14px 0; }
+  .cmd pre {
+    background: var(--term-bg); color: #dcdcf5; font-family: var(--font-mono);
+    font-size: .86rem; line-height: 1.7; padding: 15px 92px 15px 18px;
+    border-radius: var(--radius-sm); overflow-x: auto; white-space: pre;
+  }
+  .cmd pre .c { color: #8a8ab8; }
+  .cmd .copy {
+    position: absolute; top: 9px; right: 9px;
+    font-family: var(--font-sans); font-size: .76rem; font-weight: 600;
+    color: #cfcff0; background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.16); border-radius: 8px;
+    padding: 5px 11px; cursor: pointer; transition: background .18s, color .18s;
+  }
+  .cmd .copy:hover { background: rgba(255,255,255,.20); color: #fff; }
+  .cmd .copy.done { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+
+  /* bloco de arquivo (conteúdo, não comando) */
+  .filebox { margin: 14px 0; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface); }
+  .filebox .fname { font-family: var(--font-mono); font-size: .78rem; color: var(--muted); background: var(--surface-2); padding: 9px 16px; border-bottom: 1px solid var(--border); }
+  .filebox pre { font-family: var(--font-mono); font-size: .84rem; line-height: 1.75; padding: 16px 18px; overflow-x: auto; color: var(--ink); }
+  .filebox pre .c { color: var(--muted); }
+  .filebox pre .hl { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 4px; padding: 1px 4px; font-weight: 600; }
+
+  /* ---------- Passo a passo ---------- */
+  .walk { display: flex; flex-direction: column; gap: 18px; counter-reset: wstep; }
+  .wstep {
+    position: relative; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 26px 28px 26px 78px; box-shadow: var(--shadow-sm);
+  }
+  .wstep::before {
+    counter-increment: wstep; content: counter(wstep);
+    position: absolute; left: 26px; top: 26px;
+    width: 34px; height: 34px; border-radius: 10px;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .wstep h3 { font-size: 1.25rem; margin-bottom: 8px; }
+  .wstep > p { color: var(--muted); font-size: .98rem; margin-bottom: 4px; }
+  .wstep > p + p { margin-top: 10px; }
+  .wstep ul, .wstep ol { color: var(--muted); font-size: .97rem; margin: 10px 0 4px 20px; }
+  .wstep li { margin-bottom: 7px; }
+  .wstep .once { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 13%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); padding: 3px 10px; border-radius: 100px; margin-left: 10px; vertical-align: 3px; }
+
+  /* ---------- Callouts ---------- */
+  .callout { display: flex; gap: 14px; padding: 18px 20px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); margin: 16px 0; }
+  .callout .ci { font-size: 1.25rem; line-height: 1.3; flex-shrink: 0; }
+  .callout p { font-size: .95rem; color: var(--muted); margin: 0; }
+  .callout p strong { color: var(--ink); }
+  .callout.tip { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+  .callout.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+  .callout.warn p { color: color-mix(in srgb, var(--warn) 78%, var(--ink)); }
+
+  /* ---------- Grade de sistemas operacionais ---------- */
+  .os-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; }
+  .os { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px 20px; }
+  .os h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; margin-bottom: 7px; display: flex; align-items: center; gap: 8px; }
+  .os p { font-size: .91rem; color: var(--muted); }
+  .os kbd { font-family: var(--font-mono); font-size: .82em; background: var(--surface-2); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+
+  /* ---------- Tabela de referência ---------- */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; }
+  th, td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: .94rem; vertical-align: top; }
+  th { font-family: var(--font-display); font-weight: 700; font-size: .84rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { white-space: nowrap; }
+  td code { background: transparent; border: none; padding: 0; color: var(--accent-ink); font-weight: 600; }
+  td:last-child { color: var(--muted); }
+
+  /* ---------- Saída / árvore de arquivos ---------- */
+  .outgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .outlist { display: flex; flex-direction: column; gap: 14px; }
+  .outitem { display: flex; gap: 13px; align-items: flex-start; }
+  .outitem .oi { font-size: 1.15rem; flex-shrink: 0; line-height: 1.4; }
+  .outitem b { font-family: var(--font-mono); font-size: .88rem; font-weight: 600; }
+  .outitem p { font-size: .93rem; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- Problemas (accordion) ---------- */
+  .faq { display: flex; flex-direction: column; gap: 12px; }
+  details {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); overflow: hidden; transition: border-color .2s;
+  }
+  details[open] { border-color: color-mix(in srgb, var(--accent) 32%, var(--border)); }
+  summary {
+    cursor: pointer; padding: 17px 22px; font-weight: 600; font-size: 1rem;
+    list-style: none; display: flex; align-items: center; gap: 12px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "+"; margin-left: auto; font-family: var(--font-mono);
+    font-size: 1.3rem; color: var(--muted); font-weight: 400; line-height: 1;
+    transition: transform .2s;
+  }
+  details[open] summary::after { content: "−"; }
+  summary:hover { background: var(--surface-2); }
+  .dbody { padding: 0 22px 20px; }
+  .dbody p { font-size: .96rem; color: var(--muted); margin-bottom: 10px; }
+  .dbody p:last-child { margin-bottom: 0; }
+  .dbody ul { color: var(--muted); font-size: .96rem; margin: 0 0 10px 20px; }
+  .dbody li { margin-bottom: 6px; }
+  .errmsg {
+    font-family: var(--font-mono); font-size: .84rem; color: var(--ink);
+    background: var(--surface-2); border-left: 3px solid color-mix(in srgb, var(--warn) 60%, transparent);
+    padding: 11px 15px; border-radius: 0 8px 8px 0; margin-bottom: 14px;
+    white-space: pre-wrap; word-break: break-word;
+  }
 
   /* ---------- Sources ---------- */
   .sources { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 780px; margin: 0 auto; }
@@ -170,7 +295,7 @@
   footer p { color: var(--muted); font-size: .9rem; margin-bottom: 6px; }
   footer .foot-author { font-size: 1.02rem; color: var(--ink); margin-bottom: 10px; }
   footer .foot-author a { color: var(--ink); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
-  footer .foot-author a:hover { color: var(--accent-ink); }
+  footer .foot-author a:hover { color: var(--accent-ink); text-decoration: none; }
   footer .made { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: .88rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 100px; }
 
   /* ---------- Reveal animation ---------- */
@@ -184,12 +309,22 @@
     .hero-grid { grid-template-columns: 1fr; gap: 40px; }
     .hero p.lead { max-width: none; }
     .terminal { transform: none; }
-    .features, .steps { grid-template-columns: 1fr; }
+    .features, .os-grid, .outgrid { grid-template-columns: 1fr; }
     .nav-links a:not(.btn) { display: none; }
     .author { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .wstep { padding: 62px 22px 24px; }
+    .wstep::before { top: 20px; left: 22px; }
   }
   @media (min-width: 561px) and (max-width: 880px) {
-    .features, .steps { grid-template-columns: repeat(2, 1fr); }
+    .features { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    /* Em tela estreita o botão "Copiar" cobria o fim dos comandos longos.
+       Aqui ele fica sozinho na primeira linha e o comando quebra em vez
+       de rolar para o lado (rolagem lateral dentro da caixa passa
+       despercebida no celular). */
+    .cmd pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 46px 16px 15px; }
+    .cmd .copy { top: 8px; right: 8px; }
   }
 </style>
 </head>
@@ -199,8 +334,9 @@
   <div class="wrap nav-inner">
     <div class="brand"><span class="dot">📄</span> BibGetPDF</div>
     <div class="nav-links">
-      <a href="#recursos">Recursos</a>
       <a href="#como-usar">Como usar</a>
+      <a href="#referencia">Referência</a>
+      <a href="#problemas">Problemas</a>
       <a href="#fontes">Fontes</a>
       <a class="btn btn-primary" href="https://github.com/henriquealvarenga/bibgetpdf">GitHub ↗</a>
     </div>
@@ -214,8 +350,8 @@
       <h1>Da sua bibliografia<br>aos PDFs, <em>automaticamente</em>.</h1>
       <p class="lead">O BibGetPDF lê seu arquivo <code>.bib</code> e busca o PDF de acesso aberto de cada artigo — descobrindo DOIs que faltam, validando cada arquivo e dizendo exatamente o que não encontrou.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="https://github.com/henriquealvarenga/bibgetpdf">Ver no GitHub ↗</a>
-        <a class="btn btn-ghost" href="#como-usar">Como usar →</a>
+        <a class="btn btn-primary" href="#como-usar">Começar do zero →</a>
+        <a class="btn btn-ghost" href="https://github.com/henriquealvarenga/bibgetpdf">Ver no GitHub ↗</a>
       </div>
       <div class="hero-meta">
         <span>🌐 10 fontes de acesso aberto</span>
@@ -225,7 +361,7 @@
     </div>
     <div class="terminal" aria-hidden="true">
       <div class="term-bar"><i></i><i></i><i></i><span>bibgetpdf — download</span></div>
-<pre><span class="c">$</span> python bibgetpdf.py <span class="b">--bib</span> references.bib
+<pre><span class="c">$</span> bibgetpdf <span class="b">--bib</span> references.bib
 
   [ 1/20] amin2024          <span class="g">✅ [Unpaywall]  0.5 MB</span>
   [ 2/20] ariasflores2022   <span class="p">🔎</span> <span class="g">✅ [EuropePMC] 0.3 MB</span>
@@ -244,9 +380,9 @@
 <section id="recursos">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">Recursos</div>
+      <div class="kicker">O que ele faz</div>
       <h2>Feito para pesquisadores e docentes</h2>
-      <p>Pensado para facilitar e agilizar a busca dos PDFs de uma bibliografia — automatizando o trabalho repetitivo e sendo transparente sobre o que não conseguiu encontrar.</p>
+      <p>Automatiza o trabalho repetitivo de caçar PDF por PDF — e é transparente sobre o que não conseguiu encontrar.</p>
     </div>
     <div class="features">
       <div class="card reveal">
@@ -268,32 +404,290 @@
   </div>
 </section>
 
-<section id="como-usar" style="background: var(--surface-2);">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <div class="kicker">Como usar</div>
-      <h2>Três passos até a pasta de PDFs</h2>
-      <p>Os comandos abaixo rodam no <strong>Terminal</strong>, dentro da pasta do projeto. Requer Python 3.10+ e duas bibliotecas (<code>bibtexparser</code> e <code>requests</code>).</p>
+<!-- ===================== ONDE DIGITAR ===================== -->
+<section id="terminal" style="background: var(--surface-2); padding-bottom: 0;">
+  <div class="wrap narrow">
+    <div class="section-head left reveal" style="max-width: none;">
+      <div class="kicker">Antes de começar</div>
+      <h2>Onde é que se digita isso?</h2>
+      <p>Os comandos deste guia são digitados no <strong>Terminal</strong> — a janelinha de texto onde o computador aceita comandos escritos. Se você não usa uma há tempos, comece por aqui.</p>
     </div>
-    <div class="steps">
-      <div class="step reveal">
-        <h3>Configure</h3>
-        <p>Copie o modelo de credenciais e informe seu e-mail e a chave gratuita da OpenAlex.</p>
-        <code><span class="prompt">$ </span>cp bibgetpdf.config.exemplo bibgetpdf.config</code>
+
+    <div class="os-grid reveal">
+      <div class="os">
+        <h4>🍎 macOS</h4>
+        <p>Aperte <kbd>⌘</kbd> + <kbd>Espaço</kbd>, escreva <strong>Terminal</strong> e tecle Enter.</p>
       </div>
-      <div class="step reveal">
+      <div class="os">
+        <h4>🪟 Windows</h4>
+        <p>Menu Iniciar, escreva <strong>PowerShell</strong> e tecle Enter.</p>
+      </div>
+      <div class="os">
+        <h4>🐧 Linux</h4>
+        <p>Aperte <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>.</p>
+      </div>
+    </div>
+
+    <div class="callout tip reveal" style="margin-top: 26px;">
+      <span class="ci">📁</span>
+      <p><strong>O truque que resolve 90% da confusão:</strong> o Terminal está sempre “dentro” de alguma pasta, e é lá que ele vai procurar seus arquivos e salvar os PDFs. Para entrar na pasta que você quer, digite <code>cd</code>, um espaço, e então <strong>arraste a pasta</strong> do Finder/Explorador para dentro da janela do Terminal — o caminho aparece sozinho. Tecle Enter e pronto, você está lá dentro.</p>
+    </div>
+    <div style="height: clamp(56px, 8vw, 92px)"></div>
+  </div>
+</section>
+
+<!-- ===================== COMO USAR ===================== -->
+<section id="como-usar" style="background: var(--surface-2); padding-top: 0;">
+  <div class="wrap narrow">
+    <div class="section-head left reveal" style="max-width: none;">
+      <div class="kicker">Como usar</div>
+      <h2>Do zero aos PDFs, passo a passo</h2>
+      <p>Os passos 1 a 3 são feitos <strong>uma única vez</strong>. Depois disso, usar o BibGetPDF é só repetir os passos 4 e 5.</p>
+    </div>
+
+    <div class="walk">
+
+      <div class="wstep reveal">
+        <h3>Instale o Python <span class="once">só uma vez</span></h3>
+        <p>O BibGetPDF é um programa em Python, então o Python precisa estar no computador — versão <strong>3.10 ou mais nova</strong>. Para descobrir se você já tem, digite no Terminal:</p>
+        <div class="cmd"><pre>python3 --version</pre><button class="copy" type="button">Copiar</button></div>
+        <p>Se responder algo como <code>Python 3.12.1</code>, está pronto. Se disser que o comando não existe, ou se o número for menor que 3.10, baixe o instalador em <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org/downloads</a> e instale normalmente.</p>
+        <div class="callout warn">
+          <span class="ci">🪟</span>
+          <p><strong>No Windows</strong>, troque <code>python3</code> por <code>python</code> em todos os comandos deste guia. E, ao instalar o Python, marque a caixinha <strong>“Add Python to PATH”</strong> na primeira tela do instalador — sem ela, o Terminal não acha o Python depois.</p>
+        </div>
+      </div>
+
+      <div class="wstep reveal">
+        <h3>Instale o BibGetPDF <span class="once">só uma vez</span></h3>
+        <p>Um comando só. Ele baixa o programa e tudo de que ele precisa:</p>
+        <div class="cmd"><pre>pip install "bibgetpdf[full]"</pre><button class="copy" type="button">Copiar</button></div>
+        <p>Isso cria um comando novo no seu Terminal, chamado <code>bibgetpdf</code>. Para conferir que deu certo:</p>
+        <div class="cmd"><pre>bibgetpdf --version</pre><button class="copy" type="button">Copiar</button></div>
+        <p>Deve responder com o número da versão. Se der erro de instalação ou “comando não encontrado”, veja <a href="#problemas">Se algo der errado</a>.</p>
+      </div>
+
+      <div class="wstep reveal">
+        <h3>Crie o arquivo de configuração <span class="once">só uma vez</span></h3>
+        <p>O BibGetPDF precisa saber <strong>o seu e-mail</strong>. Não é burocracia: as bases acadêmicas pedem um endereço de contato para saber quem está consultando (a Unpaywall recusa quem não informa) e, em troca, atendem você com mais folga. O e-mail vai num arquivinho de configuração, que o próprio programa cria:</p>
+        <div class="cmd"><pre>bibgetpdf --init</pre><button class="copy" type="button">Copiar</button></div>
+        <p>Isso cria um arquivo chamado <code>bibgetpdf.config</code> na pasta onde você está. Abra-o num editor de texto qualquer (Bloco de Notas, TextEdit) e troque o e-mail de exemplo pelo seu:</p>
+        <div class="filebox">
+          <div class="fname">bibgetpdf.config</div>
+<pre><span class="c"># OBRIGATÓRIO — seu e-mail de contato.</span>
+email = <span class="hl">voce@universidade.br</span>
+
+<span class="c"># OPCIONAL — chave da API OpenAlex (gratuita).</span>
+<span class="c"># openalex_key = sua-chave-openalex</span></pre>
+        </div>
+        <p>Salve o arquivo e acabou. <strong>É a única coisa obrigatória</strong> — a chave da OpenAlex pode ficar como está.</p>
+        <div class="callout tip">
+          <span class="ci">🔑</span>
+          <p><strong>Sobre a chave da OpenAlex (opcional):</strong> sem ela, a OpenAlex — que é <em>uma</em> das dez fontes — limita você a cerca de 100 buscas por dia; as outras nove seguem funcionando sem restrição. Se um dia quiser, a chave é gratuita e sai em um minuto em <a href="https://openalex.org/settings/api" target="_blank" rel="noopener">openalex.org/settings/api</a>: basta apagar o <code>#</code> do começo da linha <code>openalex_key</code> e colar a chave.</p>
+        </div>
+        <div class="callout warn">
+          <span class="ci">🔒</span>
+          <p>Esse arquivo guarda dados seus. <strong>Não publique e não versione no Git.</strong></p>
+        </div>
+      </div>
+
+      <div class="wstep reveal">
+        <h3>Ponha o seu arquivo <code>.bib</code> na pasta</h3>
+        <p>É a lista das referências que você quer baixar, no formato BibTeX. Do <strong>Zotero</strong>:</p>
+        <ol>
+          <li>Selecione as referências desejadas (ou a coleção inteira).</li>
+          <li>Clique com o botão direito → <strong>Exportar itens…</strong></li>
+          <li>Em “Formato”, escolha <strong>BibTeX</strong> e confirme.</li>
+          <li>Salve o arquivo <strong>na mesma pasta</strong> onde você criou o <code>bibgetpdf.config</code>.</li>
+        </ol>
+        <p>No Mendeley e no EndNote o caminho é equivalente (exportar como BibTeX). O nome do arquivo pode ser qualquer um — só precisa terminar em <code>.bib</code>.</p>
+        <div class="callout tip">
+          <span class="ci">⚡</span>
+          <p><strong>Rende mais assim:</strong> no Zotero, rode antes o <em>“Find Available PDFs”</em> para pegar o que ele já resolve sozinho, e exporte para o <code>.bib</code> só as referências que ficaram sem PDF. Aí o BibGetPDF trabalha só no que sobrou.</p>
+        </div>
+      </div>
+
+      <div class="wstep reveal">
         <h3>Rode</h3>
-        <p>Aponte para o seu arquivo <code>.bib</code> e para a pasta onde salvar os PDFs.</p>
-        <code><span class="prompt">$ </span>python bibgetpdf.py --bib references.bib</code>
+        <p>Com o Terminal dentro da pasta (lembre do truque do <code>cd</code> + arrastar), rode — trocando <code>references.bib</code> pelo nome real do seu arquivo:</p>
+        <div class="cmd"><pre>bibgetpdf --bib references.bib --output PDFs</pre><button class="copy" type="button">Copiar</button></div>
+        <p>E é só esperar. O programa vai listando cada referência com o resultado, uma por linha. Ele pausa alguns segundos entre um artigo e outro de propósito — é o que evita que as bases bloqueiem o seu acesso por excesso de requisições. Uma bibliografia de 50 itens leva alguns minutos.</p>
+        <div class="callout tip">
+          <span class="ci">↻</span>
+          <p><strong>Pode interromper e rodar de novo à vontade.</strong> Ao repetir o comando, o BibGetPDF pula o que já baixou (conferindo se cada arquivo está íntegro) e retoma de onde parou.</p>
+        </div>
       </div>
-      <div class="step reveal">
-        <h3>Receba</h3>
-        <p>PDFs nomeados <code>sobrenome-ano-titulo</code>, mais o relatório e a planilha do lote.</p>
-        <code>PDFs/
-├─ sha-2025-occupational…pdf
-├─ relatorio.html
-└─ manifest.csv</code>
+
+      <div class="wstep reveal">
+        <h3>Veja o que chegou</h3>
+        <p>Dentro da pasta <code>PDFs/</code> você encontra:</p>
+        <div class="outlist" style="margin-top: 16px;">
+          <div class="outitem">
+            <span class="oi">📄</span>
+            <div><b>sobrenome-ano-titulo.pdf</b>
+            <p>Os artigos baixados, com nome limpo e legível — um arquivo por referência encontrada.</p></div>
+          </div>
+          <div class="outitem">
+            <span class="oi">📊</span>
+            <div><b>relatorio.html</b>
+            <p>Abra no navegador (clique duas vezes). É o mais útil: mostra o que <em>não</em> baixou e por quê — paywall de verdade, bloqueio anti-robô, erro de servidor — com links prontos para buscar cada um à mão.</p></div>
+          </div>
+          <div class="outitem">
+            <span class="oi">🧾</span>
+            <div><b>manifest.csv</b>
+            <p>Uma planilha com uma linha por referência: situação, fonte de onde veio, DOI e motivo da falha. Abre no Excel ou LibreOffice.</p></div>
+          </div>
+          <div class="outitem">
+            <span class="oi">📋</span>
+            <div><b>download_log.txt</b>
+            <p>O registro detalhado da execução, caso você queira investigar algum caso específico.</p></div>
+          </div>
+        </div>
       </div>
+
+    </div>
+
+    <div class="callout tip reveal" style="margin-top: 28px; padding: 22px 24px;">
+      <span class="ci">🔁</span>
+      <p><strong>Da próxima vez que precisar</strong> — e é para este parágrafo que você deve voltar daqui a seis meses — pule tudo acima. Abra o Terminal, entre na sua pasta de trabalho (<code>cd</code> + arrastar a pasta), ponha lá o novo <code>.bib</code> e rode <code>bibgetpdf --bib nome-do-arquivo.bib --output PDFs</code>. A configuração do passo 3 continua valendo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REFERÊNCIA ===================== -->
+<section id="referencia">
+  <div class="wrap narrow">
+    <div class="section-head left reveal" style="max-width: none;">
+      <div class="kicker">Referência rápida</div>
+      <h2>Todas as opções</h2>
+      <p>Nada aqui é obrigatório — o comando do passo 5 já funciona sozinho. Estas opções existem para ajustes finos, e você pode ver a lista completa a qualquer momento com <code>bibgetpdf --help</code>.</p>
+    </div>
+    <div class="tbl-wrap reveal">
+      <table>
+        <thead>
+          <tr><th>Opção</th><th>Para que serve</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>--init</code></td><td>Cria o arquivo <code>bibgetpdf.config</code> na pasta atual. É o primeiro comando de quem acabou de instalar.</td></tr>
+          <tr><td><code>--bib</code></td><td>O arquivo <code>.bib</code> de entrada. Se você não disser nada, procura por <code>references.bib</code>.</td></tr>
+          <tr><td><code>--output</code></td><td>A pasta onde salvar os PDFs (padrão: <code>PDFs</code>). Ela é criada se não existir.</td></tr>
+          <tr><td><code>--email</code></td><td>Informa o e-mail direto no comando, sem usar o arquivo de configuração.</td></tr>
+          <tr><td><code>--openalex-key</code></td><td>Idem para a chave da OpenAlex.</td></tr>
+          <tr><td><code>--delay</code></td><td>Pausa em segundos entre um artigo e outro (padrão: <code>3</code>). Aumente para <code>6</code> ou <code>8</code> se estiver apanhando bloqueio.</td></tr>
+          <tr><td><code>--threshold</code></td><td>Rigor na comparação de títulos, de 0 a 1 (padrão: <code>0.75</code>). Maior = mais exigente, menos falsos positivos.</td></tr>
+          <tr><td><code>--doi-scrape</code></td><td>Liga uma fonte extra que lê as páginas das editoras. Acha mais alguns PDFs, mas é a maior causa de bloqueio — por isso vem desligada.</td></tr>
+          <tr><td><code>--no-doi-discovery</code></td><td>Não procurar no Crossref o DOI das entradas que não têm um. Deixe ligado (padrão): é o que mais aumenta a taxa de acerto.</td></tr>
+          <tr><td><code>--use-doi-as-filename</code></td><td>Nomeia cada PDF pelo DOI em vez de <code>sobrenome-ano-titulo</code>. Útil quando há títulos repetidos.</td></tr>
+          <tr><td><code>--no-report</code></td><td>Não gerar o <code>relatorio.html</code> no fim.</td></tr>
+          <tr><td><code>--no-probe</code></td><td>No diagnóstico final, não fazer as requisições extras de checagem — termina mais rápido, classifica com menos precisão.</td></tr>
+          <tr><td><code>--version</code></td><td>Mostra a versão instalada.</td></tr>
+          <tr><td><code>--help</code></td><td>Mostra a ajuda completa no Terminal.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PROBLEMAS ===================== -->
+<section id="problemas" style="background: var(--surface-2);">
+  <div class="wrap narrow">
+    <div class="section-head left reveal" style="max-width: none;">
+      <div class="kicker">Se algo der errado</div>
+      <h2>Os tropeços mais comuns</h2>
+      <p>Cada caixa começa com a mensagem que aparece na tela. Ache a sua e clique para abrir.</p>
+    </div>
+
+    <div class="faq">
+
+      <details class="reveal">
+        <summary>“command not found: bibgetpdf”</summary>
+        <div class="dbody">
+          <div class="errmsg">bibgetpdf: command not found
+'bibgetpdf' não é reconhecido como um comando interno ou externo</div>
+          <p>O programa foi instalado, mas o Terminal não sabe onde ele está. Não precisa reinstalar: existe uma forma equivalente de chamá-lo, que funciona sempre —</p>
+          <div class="cmd"><pre>python3 -m bibgetpdf --bib references.bib --output PDFs</pre><button class="copy" type="button">Copiar</button></div>
+          <p>Todas as opções funcionam igual; é só trocar <code>bibgetpdf</code> por <code>python3 -m bibgetpdf</code> (no Windows, <code>python -m bibgetpdf</code>) no começo do comando.</p>
+        </div>
+      </details>
+
+      <details class="reveal">
+        <summary>“Falta configurar o seu e-mail de contato”</summary>
+        <div class="dbody">
+          <div class="errmsg">⚠️  Falta configurar o seu e-mail de contato — as APIs
+    acadêmicas exigem um (a Unpaywall recusa quem não informa).</div>
+          <p>Ou o arquivo de configuração ainda não existe, ou existe mas continua com o e-mail de exemplo. O próprio recado na tela diz qual dos dois é o seu caso e mostra o caminho do arquivo, quando ele existe.</p>
+          <p>Se ainda não existe, crie com <code>bibgetpdf --init</code> e edite a linha <code>email =</code>. Se você só quer resolver de uma vez, sem arquivo nenhum, dá para informar no próprio comando:</p>
+          <div class="cmd"><pre>bibgetpdf --bib references.bib --email voce@universidade.br</pre><button class="copy" type="button">Copiar</button></div>
+        </div>
+      </details>
+
+      <details class="reveal">
+        <summary>“Não encontrei o arquivo .bib”</summary>
+        <div class="dbody">
+          <div class="errmsg">❌ Não encontrei o arquivo .bib: references.bib</div>
+          <p>Quase sempre é uma de duas coisas: o Terminal não está na pasta certa, ou o arquivo tem outro nome (o Zotero costuma exportar como <code>Exportado.bib</code> ou <code>My Library.bib</code>).</p>
+          <p>O programa ajuda: ele mostra o caminho exato onde procurou e <strong>lista os arquivos <code>.bib</code> que encontrou na pasta</strong>, já com o comando pronto para copiar. Se o nome tiver espaços, ponha entre aspas:</p>
+          <div class="cmd"><pre>bibgetpdf --bib "Minha Biblioteca.bib"</pre><button class="copy" type="button">Copiar</button></div>
+          <p>Se a lista vier vazia, o Terminal está na pasta errada — volte ao truque do <code>cd</code> + arrastar, lá em <a href="#terminal">Onde é que se digita isso</a>.</p>
+        </div>
+      </details>
+
+      <details class="reveal">
+        <summary>Erro ao instalar: “Failed building wheel for bibtexparser”</summary>
+        <div class="dbody">
+          <div class="errmsg">ERROR: Failed building wheel for bibtexparser
+ERROR: Could not build wheels for bibtexparser</div>
+          <p>As ferramentas de instalação do seu Python estão velhas. Atualize-as e tente de novo:</p>
+          <div class="cmd"><pre>python3 -m pip install --upgrade pip setuptools wheel
+pip install "bibgetpdf[full]"</pre><button class="copy" type="button">Copiar</button></div>
+          <p>Se ainda assim falhar, instale num ambiente isolado — três linhas, e não mexe em mais nada do sistema:</p>
+          <div class="cmd"><pre>python3 -m venv bibgetpdf-env
+source bibgetpdf-env/bin/activate   <span class="c"># Windows: bibgetpdf-env\Scripts\activate</span>
+pip install "bibgetpdf[full]"</pre><button class="copy" type="button">Copiar</button></div>
+          <p>Feito isso, use o <code>bibgetpdf</code> normalmente. Só lembre de repetir a linha do <code>activate</code> toda vez que abrir um Terminal novo.</p>
+        </div>
+      </details>
+
+      <details class="reveal">
+        <summary>Baixou bem menos PDFs do que eu esperava</summary>
+        <div class="dbody">
+          <p>Isso costuma ser o resultado correto, não um defeito. O BibGetPDF só busca cópias <strong>de acesso aberto</strong>: artigo que só existe atrás de paywall não vai aparecer, por definição.</p>
+          <p>Abra o <code>relatorio.html</code> antes de concluir qualquer coisa — ele separa o que faltou por motivo, e a leitura muda conforme o caso:</p>
+          <ul>
+            <li><strong>Paywall real</strong> — não há versão aberta. Baixe pelo login institucional, via <a href="https://periodicos.capes.gov.br" target="_blank" rel="noopener">Portal CAPES/CAFe</a>; o relatório já traz o link de cada artigo.</li>
+            <li><strong>Bloqueio anti-robô</strong> — o servidor recusou o acesso automatizado. Tente de novo mais tarde com <code>--delay 8</code>.</li>
+            <li><strong>Erro de servidor</strong> — problema temporário do outro lado; vale repetir o comando depois.</li>
+          </ul>
+          <p>Vale também conferir se as referências têm DOI. Sem DOI, quase toda fonte fica sem chave de busca — o BibGetPDF tenta descobrir o DOI sozinho no Crossref, mas nem sempre consegue.</p>
+        </div>
+      </details>
+
+      <details class="reveal">
+        <summary>Muitos erros de rede, ou tudo falhando de repente</summary>
+        <div class="dbody">
+          <p>Sinal clássico de que o seu IP levou um bloqueio temporário por excesso de requisições. O que fazer:</p>
+          <ul>
+            <li>Pare, espere algumas horas e recomece com uma pausa maior: <code>--delay 8</code>.</li>
+            <li>Não use <code>--doi-scrape</code>, que é justamente a fonte mais propensa a provocar bloqueio.</li>
+            <li>Prefira lotes menores — exporte 30 ou 40 referências por vez em vez de 500.</li>
+          </ul>
+          <p>Nada se perde ao interromper: o que já foi baixado permanece, e rodar de novo retoma de onde parou.</p>
+        </div>
+      </details>
+
+      <details class="reveal">
+        <summary>Onde fica o arquivo de configuração?</summary>
+        <div class="dbody">
+          <p>O BibGetPDF procura o <code>bibgetpdf.config</code> em três lugares, nesta ordem:</p>
+          <ul>
+            <li>A <strong>pasta onde você está</strong> rodando o comando — é o caso normal, e o que o <code>--init</code> cria.</li>
+            <li><code>~/.config/bibgetpdf/bibgetpdf.config</code> — use este se quiser uma configuração única, válida em qualquer pasta.</li>
+            <li>Ao lado do arquivo <code>bibgetpdf.py</code>, se você estiver rodando a partir do código-fonte.</li>
+          </ul>
+          <p>Vale lembrar a ordem de precedência: o que você escreve <strong>no comando</strong> (<code>--email</code>) vence a <strong>variável de ambiente</strong> (<code>BIBGETPDF_EMAIL</code>), que vence o <strong>arquivo</strong>.</p>
+        </div>
+      </details>
+
     </div>
   </div>
 </section>
@@ -366,6 +760,36 @@
     }
   }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
   document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+  // Botão "Copiar" nos blocos de comando. O texto copiado é o do <pre>,
+  // menos os comentários (span.c) — copiar "# Windows: ..." junto quebraria
+  // o comando ao colar.
+  document.querySelectorAll('.cmd').forEach((box) => {
+    const btn = box.querySelector('.copy');
+    const pre = box.querySelector('pre');
+    if (!btn || !pre) return;
+    btn.addEventListener('click', async () => {
+      const clone = pre.cloneNode(true);
+      clone.querySelectorAll('.c').forEach((n) => n.remove());
+      const texto = clone.textContent.split('\n')
+        .map((l) => l.replace(/\s+$/, '')).filter((l) => l.length).join('\n');
+      try {
+        await navigator.clipboard.writeText(texto);
+      } catch (_) {
+        // Contextos sem permissão de área de transferência: seleciona o
+        // texto para o usuário copiar à mão (Ctrl/⌘+C).
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        sel.removeAllRanges(); sel.addRange(range);
+        return;
+      }
+      const antes = btn.textContent;
+      btn.textContent = 'Copiado!';
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = antes; btn.classList.remove('done'); }, 1600);
+    });
+  });
 </script>
 
 </body>
