@@ -3,7 +3,7 @@
 *Da sua bibliografia `.bib` aos PDFs de acesso aberto, automaticamente.*
 
 [![PyPI](https://img.shields.io/pypi/v/bibgetpdf.svg)](https://pypi.org/project/bibgetpdf/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21536834.svg)](https://doi.org/10.5281/zenodo.21536834)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21796720.svg)](https://doi.org/10.5281/zenodo.21796720)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 
@@ -223,24 +223,27 @@ usar, modificar e redistribuir livremente, mantendo o aviso de copyright.
 Se este software foi útil na sua pesquisa, por favor cite-o:
 
 > Silva, H. A. (2026). *BibGetPDF* (v1.3.0) [Software]. Zenodo.
-> https://doi.org/10.5281/zenodo.21536834
+> https://doi.org/10.5281/zenodo.21796720
 
 Em **BibTeX** (apropriado, já que a ferramenta lê `.bib`):
 
 ```bibtex
-@software{silva_2026_21536834,
+@software{silva_2026_21796720,
   author       = {Silva, Henrique Alvarenga},
   title        = {BibGetPDF},
   month        = aug,
   year         = 2026,
   publisher    = {Zenodo},
   version      = {v1.3.0},
-  doi          = {10.5281/zenodo.21536834},
-  url          = {https://doi.org/10.5281/zenodo.21536834},
+  doi          = {10.5281/zenodo.21796720},
+  url          = {https://doi.org/10.5281/zenodo.21796720},
 }
 ```
 
-**DOI (todas as versões):** [10.5281/zenodo.21536834](https://doi.org/10.5281/zenodo.21536834)
+**DOI desta versão (v1.3.0):** [10.5281/zenodo.21796720](https://doi.org/10.5281/zenodo.21796720)
+
+Cada versão tem o seu próprio DOI no Zenodo — o da v1.0.0 é
+`10.5281/zenodo.21536834` e o da v1.1.0, `10.5281/zenodo.21610649`.
 
 O GitHub também exibe um botão **"Cite this repository"** (gerado a partir do
 `CITATION.cff`) com o formato pronto em APA e BibTeX.
