@@ -1,0 +1,85 @@
+# Publica o BibGetPDF no PyPI quando uma Release é criada no GitHub.
+#
+# Usa "Trusted Publishing" (OIDC): o PyPI confia neste repositório e neste
+# workflow, e emite uma credencial de curta duração na hora do envio. Não há
+# token de API guardado em lugar nenhum — nem aqui, nem nos Secrets.
+#
+# Configuração — uma única vez, em:
+#   https://pypi.org/manage/project/bibgetpdf/settings/publishing/
+#     Owner:            henriquealvarenga
+#     Repository name:  bibgetpdf
+#     Workflow name:    publish.yml
+#     Environment name: pypi
+#
+# Para publicar uma versão nova, depois disso:
+#   1. Atualize __version__ em bibgetpdf.py (e version no CITATION.cff).
+#   2. No GitHub: Releases > Draft a new release > tag "v1.3.0" > Publish.
+#   O resto é automático.
+
+name: Publicar no PyPI
+
+on:
+  release:
+    types: [published]
+  # Permite disparar à mão pela aba Actions, se precisar reenviar.
+  workflow_dispatch:
+
+jobs:
+  construir:
+    name: Construir e conferir os pacotes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar as ferramentas de empacotamento
+        run: python -m pip install --upgrade pip build twine
+
+      - name: Construir o sdist e o wheel
+        run: python -m build
+
+      # Rede de segurança: publicar uma tag que não bate com a versão do
+      # código deixaria o PyPI permanentemente errado (uma versão enviada
+      # não pode ser substituída, só removida). Melhor falhar aqui.
+      - name: Conferir se a versão do código bate com a tag da release
+        if: github.event_name == 'release'
+        run: |
+          versao=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' bibgetpdf.py)
+          tag="${GITHUB_REF_NAME#v}"
+          echo "versão em bibgetpdf.py: $versao"
+          echo "tag da release:         $tag"
+          if [ "$versao" != "$tag" ]; then
+            echo "::error::A tag da release (${GITHUB_REF_NAME}) não corresponde a __version__ ($versao) em bibgetpdf.py. Corrija uma das duas e refaça a release."
+            exit 1
+          fi
+
+      - name: Validar os metadados dos pacotes
+        run: python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pacotes
+          path: dist/
+
+  publicar:
+    name: Enviar ao PyPI
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/bibgetpdf/
+    permissions:
+      # Exigido pelo Trusted Publishing: deixa o GitHub emitir o token OIDC
+      # que o PyPI valida. Sem esta linha, o envio falha na autenticação.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pacotes
+          path: dist/
+
+      - name: Publicar
+        uses: pypa/gh-action-pypi-publish@release/v1
