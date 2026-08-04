@@ -13,8 +13,14 @@ authors:
     affiliation: "Universidade Federal de São João del-Rei (UFSJ)"
 identifiers:
   - type: doi
+    value: "10.5281/zenodo.21796720"
+    description: "DOI do Zenodo desta versão (v1.3.0)"
+  - type: doi
     value: "10.5281/zenodo.21536834"
-    description: "DOI do Zenodo (concept DOI — todas as versões)"
+    description: "DOI do Zenodo da v1.0.0"
+  - type: doi
+    value: "10.5281/zenodo.21610649"
+    description: "DOI do Zenodo da v1.1.0"
 license: MIT
 repository-code: "https://github.com/henriquealvarenga/bibgetpdf"
 url: "https://henriquealvarenga.com/bibgetpdf/"
