@@ -9,6 +9,66 @@
 <meta property="og:title" content="BibGetPDF — do .bib aos PDFs, automaticamente">
 <meta property="og:description" content="Busca o PDF de acesso aberto de cada referência da sua bibliografia em 10 fontes legítimas. Descobre DOIs, valida arquivos e gera relatório do que faltou.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+<link rel="canonical" href="https://henriquealvarenga.com/bibgetpdf/">
+<meta property="og:url" content="https://henriquealvarenga.com/bibgetpdf/">
+
+<!-- Identificação do autor em dados estruturados (schema.org, JSON-LD).
+     Invisível para o leitor; lido por Google, ChatGPT, Claude e Gemini.
+
+     O @id da Pessoa é o MESMO usado em henriquealvarenga.com. É isso que faz
+     os buscadores entenderem que o autor deste programa e o médico do site
+     principal são a mesma pessoa, consolidando a autoria de tudo o que está
+     publicado no domínio numa única entidade.
+
+     Aqui o tipo é SoftwareApplication (não Book), com o DOI conceitual do
+     Zenodo, a licença e o requisito de Python declarados. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://henriquealvarenga.com/#pessoa",
+      "name": "Henrique Alvarenga da Silva",
+      "honorificPrefix": "Dr.",
+      "jobTitle": "Médico Psiquiatra e Professor de Medicina",
+      "url": "https://henriquealvarenga.com",
+      "identifier": [
+        { "@type": "PropertyValue", "propertyID": "CRM-MG", "value": "31.778" },
+        { "@type": "PropertyValue", "propertyID": "RQE", "value": "8381" },
+        { "@type": "PropertyValue", "propertyID": "ORCID", "value": "0000-0001-9799-5240" }
+      ],
+      "affiliation": [
+        { "@type": "CollegeOrUniversity", "name": "Universidade Federal de São João del-Rei (UFSJ)" },
+        { "@type": "CollegeOrUniversity", "name": "Centro Universitário Presidente Tancredo de Almeida Neves (UNIPTAN)" }
+      ],
+      "sameAs": [
+        "https://orcid.org/0000-0001-9799-5240",
+        "https://lattes.cnpq.br/6147640440978297",
+        "https://scholar.google.com/citations?user=Fbv4vDsAAAAJ",
+        "https://www.linkedin.com/in/henriquealvarengasilva"
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://henriquealvarenga.com/bibgetpdf/#software",
+      "name": "BibGetPDF",
+      "description": "Baixa automaticamente os PDFs de acesso aberto das referências de um arquivo .bib, consultando 10 fontes legítimas de open access, descobrindo DOIs ausentes via Crossref e validando cada download.",
+      "author": { "@id": "https://henriquealvarenga.com/#pessoa" },
+      "url": "https://henriquealvarenga.com/bibgetpdf/",
+      "codeRepository": "https://github.com/henriquealvarenga/bibgetpdf",
+      "applicationCategory": "ResearchApplication",
+      "operatingSystem": "macOS, Linux, Windows",
+      "runtimePlatform": "Python 3.10+",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "inLanguage": "pt-BR",
+      "identifier": "https://doi.org/10.5281/zenodo.21536833",
+      "sameAs": "https://doi.org/10.5281/zenodo.21536833"
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
